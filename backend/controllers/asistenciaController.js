@@ -144,3 +144,100 @@ exports.resumen = (req, res) => {
 };
 
 exports._calcular = calcular;
+
+exports.webScan = (req, res) => {
+  const { empresa_id, cedula, nombre } = req.body;
+  if (!empresa_id || !cedula || !nombre) return res.status(400).json({ success: false, message: 'Faltan datos requeridos' });
+
+  // 1. Buscar o crear empleado
+  db.query('SELECT * FROM empleados WHERE empresa_id = ? AND cedula = ? LIMIT 1', [empresa_id, cedula], (err, empRows) => {
+    if (err) return res.status(500).json({ success: false, message: err.message });
+    
+    let empleado = empRows.length ? empRows[0] : null;
+    
+    const procesarAsistencia = (emp) => {
+      // 2. Registrar asistencia
+      db.query(
+        'SELECT * FROM asistencias WHERE empresa_id = ? AND empleado_id = ? AND hora_salida IS NULL AND fecha >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) ORDER BY id DESC LIMIT 1',
+        [empresa_id, emp.id],
+        (e, openRows) => {
+          if (e) return res.status(500).json({ success: false, message: e.message });
+          const nowSql = new Date().toLocaleString('sv-SE', { timeZone: 'America/Bogota' });
+          const [fecha, hora] = nowSql.split(' ');
+
+          if (!openRows.length) {
+            // ENTRADA
+            db.query(
+              'INSERT INTO asistencias (empresa_id, empleado_id, cedula, fecha, hora_entrada) VALUES (?,?,?,?,?)',
+              [empresa_id, emp.id, cedula, fecha, hora],
+              (insErr, result) => {
+                if (insErr) return res.status(500).json({ success: false, message: insErr.message });
+                
+                // EMITIR NOTIFICACION POR SOCKET
+                if(req.io) {
+                  req.io.emit('nueva_asistencia', {
+                    empresa_id: Number(empresa_id),
+                    tipo: 'entrada',
+                    titulo: '¡Nueva Entrada!',
+                    mensaje: `${emp.nombre} (C.C ${cedula}) ingresó a las ${hora}`,
+                    hora: hora
+                  });
+                }
+                
+                return res.json({ success: true, tipo: 'entrada', hora });
+              }
+            );
+          } else {
+            // SALIDA
+            const abierta = openRows[0];
+            db.query(
+              'SELECT COUNT(id) as count FROM asistencias WHERE empresa_id = ? AND empleado_id = ? AND fecha = ? AND id < ?',
+              [empresa_id, emp.id, abierta.fecha, abierta.id],
+              (cErr, cRows) => {
+                if (cErr) return res.status(500).json({ success: false, message: cErr.message });
+                const esPrimerTurno = cRows[0].count === 0;
+                const calc = calcular(String(abierta.fecha).slice(0, 10), abierta.hora_entrada, hora, esPrimerTurno);
+                
+                db.query(
+                  `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
+                  [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
+                  (upErr) => {
+                    if (upErr) return res.status(500).json({ success: false, message: upErr.message });
+                    
+                    // EMITIR NOTIFICACION POR SOCKET
+                    if(req.io) {
+                      req.io.emit('nueva_asistencia', {
+                        empresa_id: Number(empresa_id),
+                        tipo: 'salida',
+                        titulo: '¡Nueva Salida!',
+                        mensaje: `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`,
+                        hora: hora
+                      });
+                    }
+                    
+                    return res.json({ success: true, tipo: 'salida', hora });
+                  }
+                );
+              }
+            );
+          }
+        }
+      );
+    };
+
+    if (empleado) {
+      if (empleado.estado === 0) return res.status(400).json({ success: false, message: 'Empleado inactivo' });
+      procesarAsistencia(empleado);
+    } else {
+      // Crear empleado si no existe
+      db.query(
+        'INSERT INTO empleados (empresa_id, cedula, nombre, estado) VALUES (?, ?, ?, 1)',
+        [empresa_id, cedula, nombre],
+        (insEmpErr, insEmpRes) => {
+          if (insEmpErr) return res.status(500).json({ success: false, message: insEmpErr.message });
+          procesarAsistencia({ id: insEmpRes.insertId, empresa_id, cedula, nombre });
+        }
+      );
+    }
+  });
+};

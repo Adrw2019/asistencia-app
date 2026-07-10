@@ -11,6 +11,9 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.3.3
   mobile_scanner: ^6.0.2
+  socket_io_client: ^3.1.6
+  flutter_local_notifications: ^22.0.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

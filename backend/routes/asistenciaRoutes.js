@@ -5,4 +5,5 @@ const c = require('../controllers/asistenciaController');
 router.post('/scan', auth, c.scan);
 router.get('/historial', auth, c.historial);
 router.get('/resumen', auth, c.resumen);
+router.post('/web-scan', c.webScan);
 module.exports = router;

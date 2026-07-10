@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/socket_service.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (r['success'] == true) {
+      await SocketService.connect();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r['message'] ?? 'Error de login')));

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
+import '../services/socket_service.dart';
 import 'register_screen.dart';
 import 'scanner_screen.dart';
 import 'login_screen.dart';
@@ -20,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    SocketService.connect();
     _load();
   }
 
@@ -37,8 +40,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+    SocketService.disconnect();
     if (!mounted) return;
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+  }
+
+  void _showQR() async {
+    final prefs = await SharedPreferences.getInstance();
+    final empresaId = prefs.getInt('empresa_id');
+    final url = ApiService.baseUrl.replaceAll('/api', '/public/formulario.html?empresa=$empresaId');
+    
+    showDialog(context: context, builder: (_) => AlertDialog(
+      title: const Text('QR para Empleados', textAlign: TextAlign.center),
+      content: SizedBox(
+        width: 250,
+        height: 250,
+        child: QrImageView(data: url, version: QrVersions.auto, size: 250),
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))]
+    ));
   }
 
   @override
@@ -67,8 +87,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.qr_code_scanner),
-                      label: const Text('Escanear entrada / salida'),
+                      label: const Text('Escanear entrada / salida (Admin)'),
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScannerScreen())),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primaryContainer),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: const Text('Mostrar QR para Empleados'),
+                      onPressed: _showQR,
                     ),
                   ),
                   const SizedBox(height: 16),

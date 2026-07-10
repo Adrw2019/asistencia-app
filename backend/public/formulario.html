@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Asistencia</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --text: #1f2937;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .icon {
+      background: #e0e7ff;
+      color: var(--primary);
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 20px;
+    }
+    .icon svg { width: 32px; height: 32px; }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    p.subtitle {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .form-group {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    button {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover { background: var(--primary-hover); }
+    button:active { transform: scale(0.98); }
+    button:disabled { background: #9ca3af; cursor: not-allowed; }
+    
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    .message.success {
+      background: #dcfce7;
+      color: #166534;
+      display: block;
+    }
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      display: block;
+    }
+    
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="form-card">
+    <div class="icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <h1>Registro de Asistencia</h1>
+    <p class="subtitle">Ingresa tus datos para registrar tu entrada o salida</p>
+
+    <form id="asistencia-form">
+      <div class="form-group">
+        <label for="cedula">Número de Cédula</label>
+        <input type="tel" id="cedula" name="cedula" required placeholder="Ej: 123456789">
+      </div>
+      <div class="form-group">
+        <label for="nombre">Nombre Completo</label>
+        <input type="text" id="nombre" name="nombre" required placeholder="Ej: Juan Pérez">
+      </div>
+      <button type="submit" id="submit-btn">
+        <span id="btn-text">Registrar Asistencia</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+    </form>
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const empresaId = urlParams.get('empresa');
+
+    document.getElementById('asistencia-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const cedula = document.getElementById('cedula').value.trim();
+      const nombre = document.getElementById('nombre').value.trim();
+      const btn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const spinner = document.getElementById('spinner');
+      const msgBox = document.getElementById('message');
+
+      if(!empresaId) {
+        msgBox.className = 'message error';
+        msgBox.textContent = 'Error: Código QR inválido (Falta ID de empresa).';
+        return;
+      }
+
+      // UI state
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      spinner.style.display = 'block';
+      msgBox.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/asistencias/web-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ empresa_id: empresaId, cedula, nombre })
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          msgBox.className = 'message success';
+          msgBox.innerHTML = `<strong>¡${data.tipo === 'entrada' ? 'Entrada' : 'Salida'} registrada!</strong><br>Hora: ${data.hora || ''}`;
+          document.getElementById('asistencia-form').reset();
+        } else {
+          msgBox.className = 'message error';
+          msgBox.textContent = data.message || 'Error al procesar asistencia.';
+        }
+      } catch (err) {
+        msgBox.className = 'message error';
+        msgBox.textContent = 'Error de conexión. Intenta nuevamente.';
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
