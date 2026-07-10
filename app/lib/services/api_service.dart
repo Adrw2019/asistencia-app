@@ -1,0 +1,78 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ApiService {
+  // IMPORTANTE:
+  // Puede generar la APK para diferentes empresas inyectando la variable BASE_URL.
+  // Ejemplo: flutter build apk --release --dart-define=BASE_URL=http://api.empresa1.com
+  // Si no se inyecta, usa la IP por defecto.
+  static String baseUrl = const String.fromEnvironment('BASE_URL', defaultValue: 'http://192.168.0.13:5000/api');
+
+  static Future<String?> _token() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  static Future<Map<String, String>> _headers() async {
+    final token = await _token();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  static Future<Map<String, dynamic>> login(String username, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'password': password}),
+    );
+    final data = _decode(response);
+    if (response.statusCode == 200 && data['success'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', data['token']);
+      await prefs.setInt('empresa_id', data['user']['empresa_id'] ?? 0);
+      await prefs.setString('empresa_nombre', data['user']['empresa_nombre'] ?? '');
+    }
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> registerEmployee(String cedula, String nombre, String celular, String cargo) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/employees/register'),
+      headers: await _headers(),
+      body: jsonEncode({'cedula': cedula, 'nombre': nombre, 'celular': celular, 'cargo': cargo}),
+    );
+    return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> getEmployees() async {
+    final response = await http.get(Uri.parse('$baseUrl/employees'), headers: await _headers());
+    return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> scanCedula(String cedula) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/asistencias/scan'),
+      headers: await _headers(),
+      body: jsonEncode({'cedula': cedula}),
+    );
+    return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> historial() async {
+    final response = await http.get(Uri.parse('$baseUrl/asistencias/historial'), headers: await _headers());
+    return _decode(response);
+  }
+
+  static Map<String, dynamic> _decode(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      return {'success': false, 'message': 'Respuesta inválida'};
+    } catch (_) {
+      return {'success': false, 'message': response.body.isNotEmpty ? response.body : 'Error ${response.statusCode}'};
+    }
+  }
+}
