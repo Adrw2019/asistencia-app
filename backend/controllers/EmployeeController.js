@@ -5,7 +5,7 @@ exports.create = (req, res) => {
   const { cedula, nombre, celular, cargo } = req.body;
   if (!cedula || !nombre) return res.status(400).json({ success: false, message: 'Cédula y nombre son obligatorios' });
   db.query(
-    'INSERT INTO empleados (empresa_id, cedula, nombre, celular, cargo, estado) VALUES (?,?,?,?,?,1)',
+    'INSERT INTO empleados (empresa_id, cedula, nombre, celular, cargo, estado) VALUES (?,?,?,?,?,1) RETURNING id',
     [empresaId, cedula, nombre, celular || null, cargo || null],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: err.message });

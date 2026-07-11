@@ -3,7 +3,7 @@ const db = require('../config/database');
 const Employee = {
   create: (data, callback) => {
     const { cedula, nombre, celular, cargo } = data;
-    const query = 'INSERT INTO empleados (cedula, nombre, celular, cargo) VALUES (?, ?, ?, ?)';
+    const query = 'INSERT INTO empleados (cedula, nombre, celular, cargo) VALUES (?, ?, ?, ?) RETURNING id';
     db.query(query, [cedula, nombre, celular, cargo], callback);
   },
 

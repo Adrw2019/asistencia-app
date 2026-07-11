@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const initDB = require('./initDB');
 const cors = require('cors');
 const db = require('./config/db');
 const path = require('path');
@@ -10,6 +11,9 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
+
+// Inicializar la base de datos PostgreSQL
+initDB();
 
 app.use((req, res, next) => {
   req.io = io;

@@ -13,7 +13,7 @@ exports.register = (req, res) => {
   const crearUsuario = (empresaId) => {
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) return res.status(500).json({ success: false, message: 'Error al encriptar contraseña' });
-      db.query('INSERT INTO usuarios (username,email,password,empresa_id) VALUES (?,?,?,?)', [username, email || null, hash, empresaId], (e) => {
+      db.query('INSERT INTO usuarios (username,email,password,empresa_id) VALUES (?,?,?,?) RETURNING id', [username, email || null, hash, empresaId], (e) => {
         if (e) return res.status(500).json({ success: false, message: e.message });
         res.json({ success: true, message: 'Administrador registrado', empresa_id: empresaId });
       });
@@ -21,7 +21,7 @@ exports.register = (req, res) => {
   };
 
   if (empresa_id) return crearUsuario(empresa_id);
-  db.query('INSERT INTO empresas (nombre, correo) VALUES (?,?)', [empresa_nombre || 'Empresa Principal', email || null], (err, result) => {
+  db.query('INSERT INTO empresas (nombre, correo) VALUES (?,?) RETURNING id', [empresa_nombre || 'Empresa Principal', email || null], (err, result) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
     crearUsuario(result.insertId);
   });
