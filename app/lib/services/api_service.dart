@@ -7,7 +7,7 @@ class ApiService {
   // Puede generar la APK para diferentes empresas inyectando la variable BASE_URL.
   // Ejemplo: flutter build apk --release --dart-define=BASE_URL=http://api.empresa1.com
   // Si no se inyecta, usa la IP por defecto.
-  static String baseUrl = const String.fromEnvironment('BASE_URL', defaultValue: 'http://192.168.0.13:5000/api');
+  static String baseUrl = const String.fromEnvironment('BASE_URL', defaultValue: 'https://asistencia-app-92to.onrender.com/api');
 
   static Future<String?> _token() async {
     final prefs = await SharedPreferences.getInstance();
