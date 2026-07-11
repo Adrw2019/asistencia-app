@@ -28,3 +28,14 @@ exports.getByCedula = (req, res) => {
     res.json({ success: true, data: rows[0] });
   });
 };
+
+exports.delete = (req, res) => {
+  db.query(
+    'UPDATE empleados SET estado = 0 WHERE id = ? AND empresa_id = ?',
+    [req.params.id, req.user.empresa_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, message: 'Empleado eliminado' });
+    }
+  );
+};

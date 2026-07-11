@@ -94,6 +94,16 @@ class ApiService {
     return _decode(response);
   }
 
+  static Future<Map<String, dynamic>> deleteEmployee(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/employees/$id'), headers: await _headers());
+    return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> deleteHistory(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/asistencias/$id'), headers: await _headers());
+    return _decode(response);
+  }
+
   static Map<String, dynamic> _decode(http.Response response) {
     try {
       final data = jsonDecode(response.body);

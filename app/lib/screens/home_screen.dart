@@ -62,6 +62,36 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
   }
 
+  void _confirmDelete(int id, String nombre) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF111328),
+        title: const Text('Eliminar Empleado', style: TextStyle(color: Colors.white)),
+        content: Text('¿Estás seguro que deseas eliminar a $nombre?', style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteEmployee(id);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteEmployee(int id) async {
+    setState(() => loading = true);
+    final res = await ApiService.deleteEmployee(id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Eliminado')));
+    }
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,12 +116,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: _buildOptionCard(
+                          icon: Icons.qr_code,
+                          title: 'Código QR',
+                          onTap: _showQR,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildOptionCard(
                           icon: Icons.history,
                           title: 'Historial',
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _buildOptionCard(
                           icon: Icons.settings,
@@ -112,6 +150,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
                       title: Text(e['nombre'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       subtitle: Text('Cédula: ${e['cedula']} - ${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () => _confirmDelete(e['id'], e['nombre']),
+                      ),
                     ),
                   )).toList(),
                 ],

@@ -114,6 +114,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
                                   ],
                                 ),
+                                const SizedBox(height: 16),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: () => _confirmDelete(item['id']),
+                                    icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                                    label: const Text('Eliminar Registro', style: TextStyle(color: Colors.redAccent)),
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -123,5 +132,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   },
                 ),
     );
+  }
+
+  void _confirmDelete(int id) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF111328),
+        title: const Text('Eliminar Registro', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Estás seguro que deseas eliminar permanentemente este registro de asistencia?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteHistory(id);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteHistory(int id) async {
+    setState(() => _loading = true);
+    final res = await ApiService.deleteHistory(id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Eliminado')));
+    }
+    _load();
   }
 }

@@ -246,3 +246,14 @@ exports.webScan = (req, res) => {
   });
   }); // fin db.query config
 };
+
+exports.delete = (req, res) => {
+  db.query(
+    'DELETE FROM asistencias WHERE id = ? AND empresa_id = ?',
+    [req.params.id, req.user.empresa_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, message: 'Registro de asistencia eliminado' });
+    }
+  );
+};
