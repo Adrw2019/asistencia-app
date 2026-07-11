@@ -41,5 +41,16 @@ app.get('/descargar-app', (req, res) => {
   res.download(path.join(__dirname, 'public', 'app-release.apk'));
 });
 
+app.get('/imprimir-qr', async (req, res) => {
+  try {
+    const url = 'https://asistencia-app-92to.onrender.com/public/formulario.html?empresa=1';
+    const qrImage = await QRCode.toBuffer(url, { width: 500, margin: 2 });
+    res.setHeader('Content-Type', 'image/png');
+    res.send(qrImage);
+  } catch (err) {
+    res.status(500).send('Error generando QR');
+  }
+});
+
 const port = process.env.PORT || 5000;
 server.listen(port, '0.0.0.0', () => console.log(`Servidor funcionando en http://localhost:${port}`));
