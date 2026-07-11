@@ -189,8 +189,18 @@
         const data = await response.json();
 
         if (response.ok && data.success) {
+          let extraMsg = '';
+          if (data.calculos) {
+            extraMsg = `<div style="margin-top:10px; font-size:13px; text-align:left; background:#fff; padding:10px; border-radius:6px; border:1px solid #d1d5db;">
+              <strong>Resumen de tu jornada:</strong><br>
+              Horas trabajadas: ${data.calculos.horas_trabajadas}<br>
+              Horas extras: ${data.calculos.horas_extra}<br>
+              ${data.calculos.llego_tarde ? '<span style="color:#991b1b;">Llegaste tarde</span><br>' : ''}
+              Total a pagar (aprox): $${data.calculos.pago.toLocaleString()}
+            </div>`;
+          }
           msgBox.className = 'message success';
-          msgBox.innerHTML = `<strong>¡${data.tipo === 'entrada' ? 'Entrada' : 'Salida'} registrada!</strong><br>Hora: ${data.hora || ''}`;
+          msgBox.innerHTML = `<strong>¡${data.tipo === 'entrada' ? 'Entrada' : 'Salida'} registrada!</strong><br>Hora: ${data.hora || ''}${extraMsg}`;
           document.getElementById('asistencia-form').reset();
         } else {
           msgBox.className = 'message error';

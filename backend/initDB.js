@@ -9,9 +9,13 @@ const initDB = async () => {
       telefono VARCHAR(50),
       correo VARCHAR(150),
       estado SMALLINT DEFAULT 1,
+      hora_entrada_esperada TIME DEFAULT '08:00:00',
+      hora_salida_esperada TIME DEFAULT '17:00:00',
+      valor_dia INTEGER DEFAULT 60000,
+      paga_extras SMALLINT DEFAULT 1,
+      descuenta_tarde SMALLINT DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-
     CREATE TABLE IF NOT EXISTS empleados (
       id SERIAL PRIMARY KEY,
       empresa_id INTEGER NOT NULL REFERENCES empresas(id),
@@ -69,6 +73,16 @@ const initDB = async () => {
         else resolve(res);
       });
     });
+    
+    // Migraciones de esquema seguras (ignoran error si columna ya existe)
+    try {
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN hora_entrada_esperada TIME DEFAULT '08:00:00'", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN hora_salida_esperada TIME DEFAULT '17:00:00'", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN valor_dia INTEGER DEFAULT 60000", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN paga_extras SMALLINT DEFAULT 1", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN descuenta_tarde SMALLINT DEFAULT 1", [], r));
+    } catch(e) {}
+
     console.log('Base de datos Postgres inicializada correctamente.');
     
     // Insertar datos de prueba si no existen

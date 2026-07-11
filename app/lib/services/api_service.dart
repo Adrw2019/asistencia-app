@@ -80,6 +80,20 @@ class ApiService {
     return _decode(response);
   }
 
+  static Future<Map<String, dynamic>> getConfig() async {
+    final response = await http.get(Uri.parse('$baseUrl/empresas/config'), headers: await _headers());
+    return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> updateConfig(Map<String, dynamic> config) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/empresas/config'),
+      headers: await _headers(),
+      body: jsonEncode(config),
+    );
+    return _decode(response);
+  }
+
   static Map<String, dynamic> _decode(http.Response response) {
     try {
       final data = jsonDecode(response.body);

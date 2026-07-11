@@ -4,8 +4,9 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 import 'register_screen.dart';
-import 'scanner_screen.dart';
 import 'login_screen.dart';
+import 'config_screen.dart';
+import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -86,20 +87,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.qr_code_scanner),
-                      label: const Text('Escanear entrada / salida (Admin)'),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScannerScreen())),
+                      style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primaryContainer),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: const Text('Mostrar QR de la Empresa (Para Imprimir)'),
+                      onPressed: _showQR,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primaryContainer),
-                      icon: const Icon(Icons.qr_code_2),
-                      label: const Text('Mostrar QR para Empleados'),
-                      onPressed: _showQR,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.history),
+                          label: const Text('Historial'),
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.settings),
+                          label: const Text('Config.'),
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen())),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   const Text('Empleados de esta empresa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

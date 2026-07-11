@@ -1,27 +1,23 @@
 const db = require('../config/db');
 
-const JORNADA = {
-  lunes_sabado: { entrada: '08:00:00', salida: '17:30:00', horas: 9.5 },
-  domingo: { entrada: '09:00:00', salida: '14:00:00', horas: 5 }
-};
-const VALOR_DIA = 60000;
-const RECARGO_EXTRA = 1.5;
-
 function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
 function money(n) { return Math.round(Number(n) || 0); }
-function horario(fecha) {
-  const d = new Date(`${fecha}T12:00:00`);
-  return d.getDay() === 0 ? JORNADA.domingo : JORNADA.lunes_sabado;
-}
 
-function calcular(fecha, entrada, salida, esPrimerTurno = true) {
-  const h = horario(fecha);
+function calcular(fecha, entrada, salida, esPrimerTurno = true, config) {
   const entradaDt = toDate(fecha, entrada);
   const salidaDt = toDate(fecha, salida);
-  const inicioNormal = toDate(fecha, h.entrada);
-  const finNormal = toDate(fecha, h.salida);
-  const valorHora = VALOR_DIA / h.horas;
+  
+  // Usar configuración de la empresa o defaults
+  const inicioNormal = toDate(fecha, config?.hora_entrada_esperada || '08:00:00');
+  const finNormal = toDate(fecha, config?.hora_salida_esperada || '17:00:00');
+  const valorDia = config?.valor_dia || 60000;
+  const pagaExtras = config?.paga_extras !== 0;
+  const descuentaTarde = config?.descuenta_tarde !== 0;
+  
+  const horasJornada = Math.max(1, hoursBetween(inicioNormal, finNormal));
+  const valorHora = valorDia / horasJornada;
+  const recargoExtra = 1.5;
 
   const horasTrabajadas = hoursBetween(entradaDt, salidaDt);
   
@@ -35,14 +31,17 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true) {
   
   const extraAntes = entradaDt < inicioNormal ? hoursBetween(entradaDt, inicioNormal) : 0;
   const extraDespues = salidaDt > finNormal ? hoursBetween(finNormal, salidaDt) : 0;
-  const horasExtra = extraAntes + extraDespues;
+  const horasExtra = pagaExtras ? (extraAntes + extraDespues) : 0;
 
-  // Descuento solo por tiempo que faltó dentro de la jornada normal: llegada tarde + salida anticipada.
-  const descuento = money(((minutosTarde + minutosSalidaAnticipada) / 60) * valorHora);
+  // Descuento solo si la empresa lo tiene activado
+  let descuento = 0;
+  if (descuentaTarde) {
+    descuento = money(((minutosTarde + minutosSalidaAnticipada) / 60) * valorHora);
+  }
 
-  // Pago normal proporcional máximo hasta 1 día, menos descuentos, más extras al 150%.
-  const pagoBase = Math.max(0, VALOR_DIA - descuento);
-  const pagoExtras = horasExtra * valorHora * RECARGO_EXTRA;
+  // Pago base hasta el valor del día, menos descuentos
+  const pagoBase = Math.max(0, valorDia - descuento);
+  const pagoExtras = horasExtra * valorHora * recargoExtra;
   const pago = money(pagoBase + pagoExtras);
 
   return {
@@ -149,8 +148,13 @@ exports.webScan = (req, res) => {
   const { empresa_id, cedula, nombre } = req.body;
   if (!empresa_id || !cedula || !nombre) return res.status(400).json({ success: false, message: 'Faltan datos requeridos' });
 
-  // 1. Buscar o crear empleado
-  db.query('SELECT * FROM empleados WHERE empresa_id = ? AND cedula = ? LIMIT 1', [empresa_id, cedula], (err, empRows) => {
+  // 0. Obtener config de empresa
+  db.query('SELECT hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde FROM empresas WHERE id = ?', [empresa_id], (errConf, confRows) => {
+    if (errConf) return res.status(500).json({ success: false, message: errConf.message });
+    const config = confRows.length ? confRows[0] : null;
+
+    // 1. Buscar o crear empleado
+    db.query('SELECT * FROM empleados WHERE empresa_id = ? AND cedula = ? LIMIT 1', [empresa_id, cedula], (err, empRows) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
     
     let empleado = empRows.length ? empRows[0] : null;
@@ -196,7 +200,7 @@ exports.webScan = (req, res) => {
               (cErr, cRows) => {
                 if (cErr) return res.status(500).json({ success: false, message: cErr.message });
                 const esPrimerTurno = cRows[0].count === 0;
-                const calc = calcular(String(abierta.fecha).slice(0, 10), abierta.hora_entrada, hora, esPrimerTurno);
+                const calc = calcular(String(abierta.fecha).slice(0, 10), abierta.hora_entrada, hora, esPrimerTurno, config);
                 
                 db.query(
                   `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
@@ -215,7 +219,7 @@ exports.webScan = (req, res) => {
                       });
                     }
                     
-                    return res.json({ success: true, tipo: 'salida', hora });
+                    return res.json({ success: true, tipo: 'salida', hora, calculos: calc });
                   }
                 );
               }
@@ -240,4 +244,5 @@ exports.webScan = (req, res) => {
       );
     }
   });
+  }); // fin db.query config
 };
