@@ -68,7 +68,7 @@ exports.scan = (req, res) => {
     const empleado = empRows[0];
 
     db.query(
-      'SELECT * FROM asistencias WHERE empresa_id = ? AND empleado_id = ? AND hora_salida IS NULL AND fecha >= CURRENT_DATE - INTERVAL \\'1 DAY\\' ORDER BY id DESC LIMIT 1',
+      `SELECT * FROM asistencias WHERE empresa_id = $1 AND empleado_id = $2 AND hora_salida IS NULL AND fecha >= CURRENT_DATE - INTERVAL '1 DAY' ORDER BY id DESC LIMIT 1`,
       [empresaId, empleado.id],
       (e, openRows) => {
         if (e) return res.status(500).json({ success: false, message: e.message });
@@ -158,7 +158,7 @@ exports.webScan = (req, res) => {
     const procesarAsistencia = (emp) => {
       // 2. Registrar asistencia
       db.query(
-        'SELECT * FROM asistencias WHERE empresa_id = ? AND empleado_id = ? AND hora_salida IS NULL AND fecha >= CURRENT_DATE - INTERVAL \\'1 DAY\\' ORDER BY id DESC LIMIT 1',
+        `SELECT * FROM asistencias WHERE empresa_id = $1 AND empleado_id = $2 AND hora_salida IS NULL AND fecha >= CURRENT_DATE - INTERVAL '1 DAY' ORDER BY id DESC LIMIT 1`,
         [empresa_id, emp.id],
         (e, openRows) => {
           if (e) return res.status(500).json({ success: false, message: e.message });
