@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Código QR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0E21;
+      --card: #111328;
+      --primary: #E0A96D;
+      --primary-hover: #d19a60;
+      --text: #ffffff;
+      --text-muted: #a0aec0;
+    }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background-color: var(--card);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+    }
+    h1 {
+      color: var(--primary);
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    p {
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      font-size: 15px;
+    }
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      background-color: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+      box-sizing: border-box;
+    }
+    input:focus {
+      border-color: var(--primary);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: var(--primary);
+      color: var(--bg);
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .qr-container {
+      display: none;
+      margin-top: 30px;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+    }
+    .qr-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    #error-msg {
+      color: #fc8181;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .print-btn {
+      margin-top: 20px;
+      background-color: #2b6cb0;
+      color: white;
+    }
+    .print-btn:hover {
+      background-color: #2c5282;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="login-container">
+    <h1>Generar Código QR</h1>
+    <p>Inicia sesión con tu cuenta de administrador para obtener el código QR de tu empresa.</p>
+    
+    <div class="input-group">
+      <label>Usuario Administrador</label>
+      <input type="text" id="username" placeholder="Tu usuario">
+    </div>
+    
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input type="password" id="password" placeholder="Tu contraseña">
+    </div>
+
+    <button onclick="generarQR()">Obtener mi Código QR</button>
+    <div id="error-msg"></div>
+
+    <div class="qr-container" id="qr-container">
+      <h3 style="color: black; margin-top: 0; margin-bottom: 10px;">¡Este es tu QR oficial!</h3>
+      <p style="color: #4a5568; margin-bottom: 20px; font-size: 13px;">Imprime esta imagen y pégala en la entrada de tu empresa.</p>
+      <img id="qr-image" src="" alt="Código QR de Empresa">
+      <button class="print-btn" onclick="window.print()">Imprimir Código QR</button>
+    </div>
+  </div>
+
+  <script>
+    async function generarQR() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const err = document.getElementById('error-msg');
+      const qrContainer = document.getElementById('qr-container');
+      const qrImage = document.getElementById('qr-image');
+      
+      err.textContent = '';
+      qrContainer.style.display = 'none';
+
+      if (!user || !pass) {
+        err.textContent = 'Por favor ingresa usuario y contraseña.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user, password: pass })
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          const empresaId = data.user.empresa_id;
+          qrImage.src = `/imprimir-qr?empresa_id=${empresaId}`;
+          qrContainer.style.display = 'block';
+        } else {
+          err.textContent = data.message || 'Usuario o contraseña incorrectos';
+        }
+      } catch (e) {
+        err.textContent = 'Error al conectar con el servidor';
+      }
+    }
+  </script>
+</body>
+</html>

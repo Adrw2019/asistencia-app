@@ -44,7 +44,9 @@ app.get('/descargar-app', (req, res) => {
 
 app.get('/imprimir-qr', async (req, res) => {
   try {
-    const url = 'https://asistencia-app-92to.onrender.com/public/formulario.html?empresa=1';
+    const empresaId = req.query.empresa_id;
+    if (!empresaId) return res.status(400).send('Falta empresa_id');
+    const url = `https://asistencia-app-92to.onrender.com/public/formulario.html?empresa=${empresaId}`;
     const qrImage = await QRCode.toBuffer(url, { width: 500, margin: 2 });
     res.setHeader('Content-Type', 'image/png');
     res.send(qrImage);
