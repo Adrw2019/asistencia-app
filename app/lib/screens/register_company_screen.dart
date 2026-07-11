@@ -42,12 +42,6 @@ class _RegisterCompanyScreenState extends State<RegisterCompanyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar Empresa')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Card(
-            elevation: 3,
       backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(
         title: const Text('Registrar Empresa', style: TextStyle(color: Color(0xFFE0A96D))),
@@ -79,7 +73,7 @@ class _RegisterCompanyScreenState extends State<RegisterCompanyScreen> {
                 child: Text(_loading ? 'CREANDO CUENTA...' : 'CREAR EMPRESA', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

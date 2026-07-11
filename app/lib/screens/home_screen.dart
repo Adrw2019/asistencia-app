@@ -73,10 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(icon: const Icon(Icons.logout, color: Colors.white70), onPressed: _logout),
         ],
       ),
-      body: _loading
+      body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _loadData,
+              onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
                   const Text('Empleados de esta empresa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
                   const SizedBox(height: 12),
-                  ..._empleados.map((e) => Card(
+                  ...empleados.map((e) => Card(
                     color: const Color(0xFF111328),
                     margin: const EdgeInsets.only(bottom: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -132,6 +132,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())).then((_) => _load()),
+        backgroundColor: const Color(0xFFE0A96D),
+        foregroundColor: const Color(0xFF0A0E21),
+        icon: const Icon(Icons.person_add),
+        label: const Text('Empleado', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildOptionCard({required IconData icon, required String title, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1D1E33),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 36, color: const Color(0xFFE0A96D)),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)),
+          ],
+        ),
+      ),
     );
   }
 }

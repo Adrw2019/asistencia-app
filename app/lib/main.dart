@@ -6,7 +6,7 @@ import 'widgets/app_lock_wrapper.dart'; // Crearemos este wrapper de seguridad
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.initialize();
+  await NotificationService.init();
   runApp(const MyApp());
 }
 
