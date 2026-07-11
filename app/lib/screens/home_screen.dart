@@ -65,73 +65,70 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(
-        title: Text(empresa.isEmpty ? 'Asistencia' : empresa),
-        actions: [IconButton(onPressed: _logout, icon: const Icon(Icons.logout))],
+        backgroundColor: const Color(0xFF0A0E21),
+        title: Text(empresa.isEmpty ? 'Asistencia Premium' : empresa, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE0A96D))),
+        actions: [
+          IconButton(icon: const Icon(Icons.logout, color: Colors.white70), onPressed: _logout),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-          _load();
-        },
-        icon: const Icon(Icons.person_add),
-        label: const Text('Empleado'),
-      ),
-      body: loading
+      body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _load,
+              onRefresh: _loadData,
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  const Text('Opciones Principales', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primaryContainer),
-                      icon: const Icon(Icons.qr_code_2),
-                      label: const Text('Mostrar QR de la Empresa (Para Imprimir)'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE0A96D),
+                        foregroundColor: const Color(0xFF0A0E21),
+                        padding: const EdgeInsets.symmetric(vertical: 20)
+                      ),
+                      icon: const Icon(Icons.qr_code_2, size: 28),
+                      label: const Text('Mostrar QR de la Empresa (Para Imprimir)', style: TextStyle(fontSize: 16)),
                       onPressed: _showQR,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.history),
-                          label: const Text('Historial'),
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+                        child: _buildOptionCard(
+                          icon: Icons.history,
+                          title: 'Historial',
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.settings),
-                          label: const Text('Config.'),
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen())),
+                        child: _buildOptionCard(
+                          icon: Icons.settings,
+                          title: 'Config.',
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen())),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Empleados de esta empresa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  if (empleados.isEmpty) const Text('No hay empleados registrados.'),
-                  ...empleados.map((e) => Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.badge),
-                          title: Text(e['nombre'] ?? ''),
-                          subtitle: Text('Cédula: ${e['cedula']} - ${e['cargo'] ?? ''}'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.qr_code),
-                            onPressed: () async {
-                              final r = await ApiService.scanCedula('${e['cedula']}');
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r['message'] ?? 'Registrado')));
-                            },
-                          ),
-                        ),
-                      )),
+                  const SizedBox(height: 24),
+                  const Text('Empleados de esta empresa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
+                  const SizedBox(height: 12),
+                  ..._empleados.map((e) => Card(
+                    color: const Color(0xFF111328),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
+                      title: Text(e['nombre'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('Cédula: ${e['cedula']} - ${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
+                      trailing: const Icon(Icons.qr_code, color: Colors.white30),
+                    ),
+                  )).toList(),
                 ],
               ),
             ),

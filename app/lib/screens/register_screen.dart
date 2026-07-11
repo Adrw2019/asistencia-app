@@ -28,21 +28,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar empleado')),
+      backgroundColor: const Color(0xFF0A0E21),
+      appBar: AppBar(title: const Text('Registrar Empleado', style: TextStyle(color: Color(0xFFE0A96D)))),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(controller: _cedula, decoration: const InputDecoration(labelText: 'Cédula'), validator: (v) => v == null || v.isEmpty ? 'Ingrese cédula' : null),
-              TextFormField(controller: _nombre, decoration: const InputDecoration(labelText: 'Nombre'), validator: (v) => v == null || v.isEmpty ? 'Ingrese nombre' : null),
-              TextFormField(controller: _celular, decoration: const InputDecoration(labelText: 'Celular')),
-              TextFormField(controller: _cargo, decoration: const InputDecoration(labelText: 'Cargo')),
-              const SizedBox(height: 20),
-              SizedBox(width: double.infinity, child: ElevatedButton(onPressed: loading ? null : _save, child: Text(loading ? 'Guardando...' : 'Guardar'))),
-            ],
-          ),
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(Icons.person_add_alt_1, size: 80, color: Color(0xFFE0A96D)),
+            const SizedBox(height: 24),
+            const Text('Nuevo Miembro del Equipo', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 32),
+            TextField(controller: _nombre, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre Completo', prefixIcon: Icon(Icons.person, color: Color(0xFFE0A96D)))),
+            const SizedBox(height: 16),
+            TextField(controller: _cedula, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Número de Cédula (Login)', prefixIcon: Icon(Icons.badge, color: Color(0xFFE0A96D)))),
+            const SizedBox(height: 16),
+            TextField(controller: _celular, keyboardType: TextInputType.phone, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Celular', prefixIcon: Icon(Icons.phone, color: Color(0xFFE0A96D)))),
+            const SizedBox(height: 16),
+            TextField(controller: _cargo, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Cargo (Opcional)', prefixIcon: Icon(Icons.work, color: Color(0xFFE0A96D)))),
+            const SizedBox(height: 32),
+            SizedBox(
+              height: 55,
+              child: ElevatedButton(
+                onPressed: loading ? null : _save,
+                child: Text(loading ? 'GUARDANDO...' : 'REGISTRAR EMPLEADO', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+              ),
+            ),
+          ],
         ),
       ),
     );

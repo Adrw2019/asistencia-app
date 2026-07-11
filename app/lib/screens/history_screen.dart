@@ -29,13 +29,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Historial de Asistencias')),
+      backgroundColor: const Color(0xFF0A0E21),
+      appBar: AppBar(title: const Text('Historial de Asistencias', style: TextStyle(color: Color(0xFFE0A96D)))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _historial.isEmpty
-              ? const Center(child: Text('No hay registros todavía.'))
+              ? const Center(child: Text('No hay registros todavía.', style: TextStyle(color: Colors.white70)))
               : ListView.builder(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   itemCount: _historial.length,
                   itemBuilder: (context, index) {
                     final item = _historial[index];
@@ -49,26 +50,70 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     final int minutosTarde = item['minutos_tarde'] ?? 0;
 
                     return Card(
+                      color: const Color(0xFF111328),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.white10)),
                       child: ExpansionTile(
-                        leading: const Icon(Icons.access_time),
-                        title: Text('${item['nombre']} - $fecha'),
-                        subtitle: Text('Entrada: $entrada | Salida: $salida'),
+                        iconColor: const Color(0xFFE0A96D),
+                        collapsedIconColor: Colors.white54,
+                        leading: const Icon(Icons.access_time_filled, color: Color(0xFFE0A96D)),
+                        title: Text('${item['nombre']} - $fecha', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                        subtitle: Text('Entrada: $entrada | Salida: $salida', style: const TextStyle(color: Colors.white70)),
                         children: [
-                          Padding(
+                          Container(
                             padding: const EdgeInsets.all(16.0),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF1D1E33),
+                              borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Cargo: ${item['cargo'] ?? '-'} | C.C: ${item['cedula']}'),
-                                const Divider(),
-                                Text('Horas trabajadas: $horasT h'),
-                                Text('Horas extra: $horasE h'),
-                                if (minutosTarde > 0)
-                                  Text('Llegó tarde: $minutosTarde min', style: const TextStyle(color: Colors.red)),
-                                if (descuento > 0)
-                                  Text('Descuento por tardanza: -\$$descuento', style: const TextStyle(color: Colors.red)),
+                                Text('Cargo: ${item['cargo'] ?? '-'} | C.C: ${item['cedula']}', style: const TextStyle(color: Colors.white)),
+                                const Divider(color: Colors.white24, height: 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Horas trabajadas:', style: TextStyle(color: Colors.white70)),
+                                    Text('$horasT h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
                                 const SizedBox(height: 8),
-                                Text('Total a pagar (Aprox): \$$pago', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Horas extra:', style: TextStyle(color: Colors.white70)),
+                                    Text('$horasE h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                if (minutosTarde > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Llegó tarde:', style: TextStyle(color: Colors.redAccent)),
+                                      Text('$minutosTarde min', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ],
+                                if (descuento > 0) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
+                                      Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ],
+                                const Divider(color: Colors.white24, height: 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
+                                    Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
+                                  ],
+                                ),
                               ],
                             ),
                           )

@@ -33,44 +33,51 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0E21),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Card(
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset('assets/logo.png', width: 100, height: 100, errorBuilder: (c, e, s) => const Icon(Icons.qr_code_scanner, size: 70)),
-                  const SizedBox(height: 12),
-                  const Text('Control de Asistencia', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  TextField(controller: _user, decoration: const InputDecoration(labelText: 'Usuario o correo', border: OutlineInputBorder())),
-                  const SizedBox(height: 12),
-                  TextField(controller: _pass, obscureText: true, decoration: const InputDecoration(labelText: 'Contraseña', border: OutlineInputBorder())),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _loading ? null : _login,
-                      icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login),
-                      label: Text(_loading ? 'Ingresando...' : 'Ingresar'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterCompanyScreen())),
-                    child: const Text('¿No tienes cuenta? Registra tu empresa aquí', textAlign: TextAlign.center),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-                    child: const Text('Olvidé mi contraseña', textAlign: TextAlign.center),
-                  )
-                ],
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.business_center, size: 80, color: Color(0xFFE0A96D)),
+              const SizedBox(height: 24),
+              const Text('Asistencia Premium', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 8),
+              const Text('Control de personal para empresas', style: TextStyle(fontSize: 16, color: Colors.white54)),
+              const SizedBox(height: 48),
+              TextField(
+                controller: _user,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Usuario / Empresa', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.person, color: Color(0xFFE0A96D)), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white30))),
               ),
-            ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _pass,
+                obscureText: true,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Contraseña', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.lock, color: Color(0xFFE0A96D)), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white30))),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE0A96D)),
+                  onPressed: _loading ? null : _login,
+                  child: Text(_loading ? 'INGRESANDO...' : 'INGRESAR', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(color: Colors.white70)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterCompanyScreen())),
+                child: const Text('Crear nueva empresa', style: TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold)),
+              )
+            ],
           ),
         ),
       ),

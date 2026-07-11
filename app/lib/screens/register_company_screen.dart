@@ -48,32 +48,35 @@ class _RegisterCompanyScreenState extends State<RegisterCompanyScreen> {
           padding: const EdgeInsets.all(24),
           child: Card(
             elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.business, size: 60),
-                  const SizedBox(height: 12),
-                  const Text('Nueva Empresa', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  TextField(controller: _empresa, decoration: const InputDecoration(labelText: 'Nombre de la empresa *', border: OutlineInputBorder())),
-                  const SizedBox(height: 12),
-                  TextField(controller: _email, decoration: const InputDecoration(labelText: 'Correo electrónico', border: OutlineInputBorder())),
-                  const SizedBox(height: 12),
-                  TextField(controller: _user, decoration: const InputDecoration(labelText: 'Usuario administrador *', border: OutlineInputBorder())),
-                  const SizedBox(height: 12),
-                  TextField(controller: _pass, obscureText: true, decoration: const InputDecoration(labelText: 'Contraseña *', border: OutlineInputBorder())),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _loading ? null : _register,
-                      icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.app_registration),
-                      label: Text(_loading ? 'Registrando...' : 'Registrar Empresa'),
-                    ),
-                  )
-                ],
+      backgroundColor: const Color(0xFF0A0E21),
+      appBar: AppBar(
+        title: const Text('Registrar Empresa', style: TextStyle(color: Color(0xFFE0A96D))),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(Icons.storefront, size: 80, color: Color(0xFFE0A96D)),
+            const SizedBox(height: 24),
+            const Text('Crea tu cuenta empresarial', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 32),
+            TextField(controller: _empresa, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Nombre de la Empresa', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.business, color: Color(0xFFE0A96D)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)))),
+            const SizedBox(height: 16),
+            TextField(controller: _email, keyboardType: TextInputType.emailAddress, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Correo Electrónico', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.email, color: Color(0xFFE0A96D)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)))),
+            const SizedBox(height: 16),
+            TextField(controller: _user, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Usuario Administrador', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.person, color: Color(0xFFE0A96D)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)))),
+            const SizedBox(height: 16),
+            TextField(controller: _pass, obscureText: true, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Contraseña', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.lock, color: Color(0xFFE0A96D)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)))),
+            const SizedBox(height: 32),
+            SizedBox(
+              height: 55,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE0A96D)),
+                onPressed: _loading ? null : _register,
+                child: Text(_loading ? 'CREANDO CUENTA...' : 'CREAR EMPRESA', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
               ),
             ),
           ),

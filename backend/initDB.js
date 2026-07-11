@@ -85,19 +85,12 @@ const initDB = async () => {
 
     console.log('Base de datos Postgres inicializada correctamente.');
     
-    // Insertar datos de prueba si no existen
-    db.query("SELECT COUNT(*) as count FROM empresas", [], (err, res) => {
-      if (res && res[0] && res[0].count == 0) {
-        console.log('Insertando datos iniciales...');
-        db.query("INSERT INTO empresas (nombre, correo) VALUES ('Empresa Principal', 'andrw6382@gmail.com') RETURNING id", [], (err, resEmp) => {
-          if(resEmp && resEmp.length > 0) {
-            const empresaId = resEmp[0].id;
-            db.query("INSERT INTO usuarios (empresa_id, username, email, password) VALUES ($1, 'admin', 'andrw6382@gmail.com', '$2b$10$wN9a5w5x8/h.Gz.YmG/8L.a9/r1Y.r9.R1x9.y9.R9.r9.R9.r9') RETURNING id", [empresaId], () => {});
-            db.query("INSERT INTO empleados (empresa_id, nombre, cedula, cargo, celular) VALUES ($1, 'Empleado de prueba', '80770763', 'Operario', '3005279465')", [empresaId], () => {});
-          }
-        });
-      }
-    });
+    // Limpieza de datos de prueba obsoletos (admin, Empresa Principal, empleado de prueba)
+    db.query("DELETE FROM asistencias WHERE cedula = '80770763'");
+    db.query("DELETE FROM empleados WHERE cedula = '80770763'");
+    db.query("DELETE FROM usuarios WHERE username = 'admin'");
+    db.query("DELETE FROM empresas WHERE nombre = 'Empresa Principal'");
+    
   } catch (error) {
     console.error('Error inicializando BD:', error);
   }

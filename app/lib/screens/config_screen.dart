@@ -53,46 +53,75 @@ class _ConfigScreenState extends State<ConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuración de Empresa')),
+      backgroundColor: const Color(0xFF0A0E21),
+      appBar: AppBar(title: const Text('Configuración de Empresa', style: TextStyle(color: Color(0xFFE0A96D)))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
-                const Text('Horarios (Formato 24h ej. 08:00)', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
+                _buildSectionTitle('Horarios (Formato 24h ej. 08:00)'),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: TextField(controller: _horaEntrada, decoration: const InputDecoration(labelText: 'Hora Entrada'))),
+                    Expanded(child: TextField(controller: _horaEntrada, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Hora Entrada'))),
                     const SizedBox(width: 16),
-                    Expanded(child: TextField(controller: _horaSalida, decoration: const InputDecoration(labelText: 'Hora Salida'))),
+                    Expanded(child: TextField(controller: _horaSalida, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Hora Salida'))),
                   ],
                 ),
-                const SizedBox(height: 24),
-                const Text('Sueldo y Reglas', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                TextField(controller: _valorDia, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Valor del Día Completo (\$)')),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Pagar horas extras'),
-                  subtitle: const Text('Si sale después de hora, se calcula al 150%'),
-                  value: _pagaExtras,
-                  onChanged: (v) => setState(() => _pagaExtras = v),
-                ),
-                SwitchListTile(
-                  title: const Text('Descontar llegadas tarde'),
-                  subtitle: const Text('Descuenta proporcionalmente el tiempo perdido'),
-                  value: _descuentaTarde,
-                  onChanged: (v) => setState(() => _descuentaTarde = v),
-                ),
                 const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: _save,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Guardar Configuración'),
+                _buildSectionTitle('Sueldo y Reglas'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _valorDia,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  decoration: const InputDecoration(labelText: 'Valor del Día Completo (\$)', prefixIcon: Icon(Icons.attach_money, color: Color(0xFFE0A96D))),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(color: const Color(0xFF111328), borderRadius: BorderRadius.circular(12)),
+                  child: SwitchListTile(
+                    activeColor: const Color(0xFFE0A96D),
+                    title: const Text('Pagar horas extras', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Si sale después de hora, se calcula al 150%', style: TextStyle(color: Colors.white54)),
+                    value: _pagaExtras,
+                    onChanged: (v) => setState(() => _pagaExtras = v),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(color: const Color(0xFF111328), borderRadius: BorderRadius.circular(12)),
+                  child: SwitchListTile(
+                    activeColor: const Color(0xFFE0A96D),
+                    title: const Text('Descontar llegadas tarde', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Descuenta proporcionalmente el tiempo perdido', style: TextStyle(color: Colors.white54)),
+                    value: _descuentaTarde,
+                    onChanged: (v) => setState(() => _descuentaTarde = v),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.save),
+                    label: const Text('GUARDAR CONFIGURACIÓN'),
+                  ),
                 )
               ],
             ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        const Icon(Icons.tune, color: Color(0xFFE0A96D), size: 20),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFE0A96D))),
+      ],
     );
   }
 }
