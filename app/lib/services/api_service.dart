@@ -37,6 +37,20 @@ class ApiService {
     }
     return data;
   }
+  static Future<Map<String, dynamic>> registerCompany(String empresa, String email, String username, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'empresa_nombre': empresa, 'email': email, 'username': username, 'password': password}),
+    );
+    return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> forgotPassword(String emailOrUser) async {
+    // Placeholder - usually this calls an endpoint that sends an email
+    await Future.delayed(const Duration(seconds: 1));
+    return {'success': true, 'message': 'Si el usuario existe, se han enviado instrucciones para recuperar la contraseña (Simulado)'};
+  }
 
   static Future<Map<String, dynamic>> registerEmployee(String cedula, String nombre, String celular, String cargo) async {
     final response = await http.post(

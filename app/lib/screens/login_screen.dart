@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 import 'home_screen.dart';
+import 'register_company_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.qr_code_scanner, size: 70),
+                  Image.asset('assets/logo.png', width: 100, height: 100, errorBuilder: (c, e, s) => const Icon(Icons.qr_code_scanner, size: 70)),
                   const SizedBox(height: 12),
                   const Text('Control de Asistencia', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
@@ -56,6 +58,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login),
                       label: Text(_loading ? 'Ingresando...' : 'Ingresar'),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterCompanyScreen())),
+                    child: const Text('¿No tienes cuenta? Registra tu empresa aquí', textAlign: TextAlign.center),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                    child: const Text('Olvidé mi contraseña', textAlign: TextAlign.center),
                   )
                 ],
               ),
