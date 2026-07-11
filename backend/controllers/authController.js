@@ -23,7 +23,7 @@ exports.register = (req, res) => {
   if (empresa_id) return crearUsuario(empresa_id);
   db.query('INSERT INTO empresas (nombre, correo) VALUES (?,?) RETURNING id', [empresa_nombre || 'Empresa Principal', email || null], (err, result) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
-    crearUsuario(result.insertId);
+    crearUsuario(result.insertId || (result[0] && result[0].id));
   });
 };
 
