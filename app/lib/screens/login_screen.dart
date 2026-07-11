@@ -23,6 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (r['success'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('username', _user.text.trim());
       await SocketService.connect();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
@@ -42,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Icon(Icons.business_center, size: 80, color: Color(0xFFE0A96D)),
               const SizedBox(height: 24),
-              const Text('Asistencia Premium', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+              const Text('Asistencia', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: 8),
               const Text('Control de personal para empresas', style: TextStyle(fontSize: 16, color: Colors.white54)),
               const SizedBox(height: 48),

@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0A0E21),
-        title: Text(empresa.isEmpty ? 'Asistencia Premium' : empresa, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE0A96D))),
+        title: Text(empresa.isEmpty ? 'Asistencia' : empresa, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE0A96D))),
         actions: [
           IconButton(icon: const Icon(Icons.logout, color: Colors.white70), onPressed: _logout),
         ],
@@ -81,20 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   const Text('Opciones Principales', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE0A96D),
-                        foregroundColor: const Color(0xFF0A0E21),
-                        padding: const EdgeInsets.symmetric(vertical: 20)
-                      ),
-                      icon: const Icon(Icons.qr_code_2, size: 28),
-                      label: const Text('Mostrar QR de la Empresa (Para Imprimir)', style: TextStyle(fontSize: 16)),
-                      onPressed: _showQR,
-                    ),
-                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -126,7 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
                       title: Text(e['nombre'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       subtitle: Text('Cédula: ${e['cedula']} - ${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
-                      trailing: const Icon(Icons.qr_code, color: Colors.white30),
                     ),
                   )).toList(),
                 ],

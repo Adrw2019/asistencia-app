@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Asistencia Premium',
+      title: 'Asistencia',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -49,7 +49,8 @@ class MyApp extends StatelessWidget {
           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0A96D))),
         ),
       ),
-      home: const AppLockWrapper(child: LoginScreen()),
+      builder: (context, child) => AppLockWrapper(child: child!),
+      home: const LoginScreen(),
     );
   }
 }
