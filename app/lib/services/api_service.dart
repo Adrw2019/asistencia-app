@@ -104,6 +104,15 @@ class ApiService {
     return _decode(response);
   }
 
+  static Future<Map<String, dynamic>> updateFCMToken(String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/fcm-token'),
+      headers: await _headers(),
+      body: jsonEncode({'fcm_token': token}),
+    );
+    return _decode(response);
+  }
+
   static Map<String, dynamic> _decode(http.Response response) {
     try {
       final data = jsonDecode(response.body);
