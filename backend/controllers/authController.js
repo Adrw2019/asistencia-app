@@ -47,6 +47,19 @@ exports.login = (req, res) => {
   });
 };
 
+exports.updateFCMToken = (req, res) => {
+  const { fcm_token } = req.body;
+  const empresaId = req.user.empresa_id;
+  if (!fcm_token) return res.status(400).json({ success: false, message: 'Falta token' });
+
+  // Eliminar el token si ya existe (para no duplicar) y luego insertarlo asociado a la empresa
+  db.query('DELETE FROM fcm_tokens WHERE token = ?', [fcm_token], () => {
+    db.query('INSERT INTO fcm_tokens (empresa_id, token) VALUES (?, ?)', [empresaId, fcm_token], (err) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, message: 'Token FCM actualizado' });
+    });
+  });
+};
 exports.fix = (req, res) => {
   const db = require('../config/db');
   db.query("UPDATE usuarios SET password = ? WHERE username = 'admin'", ['$2b$10$Kx00svRA418M1ieQoWsD7Ozc7LnW3oNxXdkqe2WNqlMpyMnVzTUz6'], () => {

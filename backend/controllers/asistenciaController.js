@@ -1,4 +1,19 @@
 const db = require('../config/db');
+const admin = require('../firebase');
+
+// Función auxiliar para enviar Push Notifications a todos los dispositivos de la empresa
+function sendPushToEmpresa(empresaId, titulo, mensaje) {
+  if (!admin) return;
+  db.query('SELECT token FROM fcm_tokens WHERE empresa_id = ?', [empresaId], (err, rows) => {
+    if (err || !rows.length) return;
+    const tokens = rows.map(r => r.token);
+    const payload = {
+      notification: { title: titulo, body: mensaje },
+      tokens: tokens
+    };
+    admin.messaging().sendEachForMulticast(payload).catch(console.error);
+  });
+}
 
 function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
@@ -193,15 +208,18 @@ exports.webScan = (req, res) => {
                 if (insErr) return res.status(500).json({ success: false, message: insErr.message });
                 
                 // EMITIR NOTIFICACION POR SOCKET
+                const titulo = '¡Nueva Entrada!';
+                const mensaje = `${emp.nombre} (C.C ${cedula}) ingresó a las ${hora}`;
                 if(req.io) {
                   req.io.emit('nueva_asistencia', {
                     empresa_id: Number(empresa_id),
                     tipo: 'entrada',
-                    titulo: '¡Nueva Entrada!',
-                    mensaje: `${emp.nombre} (C.C ${cedula}) ingresó a las ${hora}`,
+                    titulo: titulo,
+                    mensaje: mensaje,
                     hora: hora
                   });
                 }
+                sendPushToEmpresa(empresa_id, titulo, mensaje);
                 
                 return res.json({ success: true, tipo: 'entrada', hora, advertencia });
               }
@@ -224,15 +242,18 @@ exports.webScan = (req, res) => {
                     if (upErr) return res.status(500).json({ success: false, message: upErr.message });
                     
                     // EMITIR NOTIFICACION POR SOCKET
+                    const titulo = '¡Nueva Salida!';
+                    const mensaje = `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`;
                     if(req.io) {
                       req.io.emit('nueva_asistencia', {
                         empresa_id: Number(empresa_id),
                         tipo: 'salida',
-                        titulo: '¡Nueva Salida!',
-                        mensaje: `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`,
+                        titulo: titulo,
+                        mensaje: mensaje,
                         hora: hora
                       });
                     }
+                    sendPushToEmpresa(empresa_id, titulo, mensaje);
                     
                     return res.json({ success: true, tipo: 'salida', hora, calculos: calc });
                   }
