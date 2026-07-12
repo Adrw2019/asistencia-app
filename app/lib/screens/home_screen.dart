@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 import 'register_screen.dart';
@@ -50,15 +51,41 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     final empresaId = prefs.getInt('empresa_id');
     final url = ApiService.baseUrl.replaceAll('/api', '/public/formulario.html?empresa=$empresaId');
+    final downloadUrl = ApiService.baseUrl.replaceAll('/api', '/imprimir-qr?empresa_id=$empresaId');
     
     showDialog(context: context, builder: (_) => AlertDialog(
-      title: const Text('QR para Empleados', textAlign: TextAlign.center),
-      content: SizedBox(
-        width: 250,
-        height: 250,
-        child: QrImageView(data: url, version: QrVersions.auto, size: 250),
+      backgroundColor: const Color(0xFF111328),
+      title: const Text('QR para Empleados', textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            child: SizedBox(
+              width: 250,
+              height: 250,
+              child: QrImageView(data: url, version: QrVersions.auto, size: 250, backgroundColor: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final uri = Uri.parse(downloadUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+            icon: const Icon(Icons.download),
+            label: const Text('Descargar para imprimir'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE0A96D),
+              foregroundColor: const Color(0xFF0A0E21),
+            ),
+          ),
+        ],
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))]
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar', style: TextStyle(color: Colors.white54)))]
     ));
   }
 
