@@ -49,6 +49,7 @@ app.get('/imprimir-qr', async (req, res) => {
     const url = `https://asistencia-app-92to.onrender.com/public/formulario.html?empresa=${empresaId}`;
     const qrImage = await QRCode.toBuffer(url, { width: 500, margin: 2 });
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', 'attachment; filename="qr_empleados.png"');
     res.send(qrImage);
   } catch (err) {
     res.status(500).send('Error generando QR');
