@@ -198,6 +198,11 @@
               ${data.calculos.llego_tarde ? '<span style="color:#991b1b;">Llegaste tarde</span><br>' : ''}
               Total a pagar (aprox): $${data.calculos.pago.toLocaleString()}
             </div>`;
+          } else if (data.advertencia) {
+            extraMsg = `<div style="margin-top:10px; font-size:13px; text-align:left; background:#fee2e2; padding:10px; border-radius:6px; border:1px solid #f87171;">
+              <strong>⚠️ Llegada tardía</strong><br>
+              Llegaste ${data.advertencia.minutos} minutos tarde. Se te aplicará un descuento aproximado de <strong>$${data.advertencia.descuento.toLocaleString()}</strong> al finalizar el turno.
+            </div>`;
           }
           msgBox.className = 'message success';
           msgBox.innerHTML = `<strong>¡${data.tipo === 'entrada' ? 'Entrada' : 'Salida'} registrada!</strong><br>Hora: ${data.hora || ''}${extraMsg}`;

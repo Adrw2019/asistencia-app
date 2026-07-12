@@ -171,6 +171,21 @@ exports.webScan = (req, res) => {
 
           if (!openRows.length) {
             // ENTRADA
+            const inicioNormal = toDate(String(fecha), config?.hora_entrada_esperada || '08:00:00');
+            const entradaDt = toDate(String(fecha), hora);
+            const minutosTarde = entradaDt > inicioNormal ? Math.round((entradaDt - inicioNormal) / 60000) : 0;
+            const descuentaTarde = config?.descuenta_tarde !== 0;
+            
+            let advertencia = null;
+            if (minutosTarde > 0 && descuentaTarde) {
+               const valorDia = config?.valor_dia || 60000;
+               const finNormal = toDate(String(fecha), config?.hora_salida_esperada || '17:00:00');
+               const horasJornada = Math.max(1, (finNormal - inicioNormal) / 3600000);
+               const valorHora = valorDia / horasJornada;
+               const descuento = Math.round((minutosTarde / 60) * valorHora);
+               advertencia = { minutos: minutosTarde, descuento };
+            }
+
             db.query(
               'INSERT INTO asistencias (empresa_id, empleado_id, cedula, fecha, hora_entrada) VALUES (?,?,?,?,?) RETURNING id',
               [empresa_id, emp.id, cedula, fecha, hora],
@@ -188,7 +203,7 @@ exports.webScan = (req, res) => {
                   });
                 }
                 
-                return res.json({ success: true, tipo: 'entrada', hora });
+                return res.json({ success: true, tipo: 'entrada', hora, advertencia });
               }
             );
           } else {
