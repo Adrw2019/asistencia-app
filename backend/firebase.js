@@ -1,4 +1,7 @@
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
+
+let messaging = null;
 
 try {
   let serviceAccount;
@@ -7,12 +10,15 @@ try {
   } else {
     serviceAccount = require('./firebase-adminsdk.json');
   }
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+  
+  const app = initializeApp({
+    credential: cert(serviceAccount)
   });
-  console.log('Firebase Admin SDK inicializado');
+  
+  messaging = getMessaging(app);
+  console.log('Firebase Admin SDK inicializado correctamente');
 } catch (error) {
   console.error('Error inicializando Firebase Admin SDK:', error.message);
 }
 
-module.exports = admin;
+module.exports = messaging;

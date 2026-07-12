@@ -1,9 +1,9 @@
 const db = require('../config/db');
-const admin = require('../firebase');
+const messaging = require('../firebase');
 
 // Función auxiliar para enviar Push Notifications a todos los dispositivos de la empresa
 function sendPushToEmpresa(empresaId, titulo, mensaje) {
-  if (!admin) return;
+  if (!messaging) return;
   db.query('SELECT token FROM fcm_tokens WHERE empresa_id = ?', [empresaId], (err, rows) => {
     if (err || !rows.length) return;
     const tokens = rows.map(r => r.token);
@@ -11,7 +11,7 @@ function sendPushToEmpresa(empresaId, titulo, mensaje) {
       notification: { title: titulo, body: mensaje },
       tokens: tokens
     };
-    admin.messaging().sendEachForMulticast(payload).catch(console.error);
+    messaging.sendEachForMulticast(payload).catch(console.error);
   });
 }
 
