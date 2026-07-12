@@ -239,6 +239,7 @@ exports.webScan = (req, res) => {
               (cErr, cRows) => {
                 if (cErr) return res.status(500).json({ success: false, message: cErr.message });
                 try {
+                  const esPrimerTurno = cRows[0].count === 0;
                   // Parse date correctly from Date object or string
                   const d = new Date(abierta.fecha);
                   const year = d.getFullYear();
