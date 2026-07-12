@@ -238,38 +238,43 @@ exports.webScan = (req, res) => {
               [empresa_id, emp.id, abierta.fecha, abierta.id],
               (cErr, cRows) => {
                 if (cErr) return res.status(500).json({ success: false, message: cErr.message });
-                // Parse date correctly from Date object or string
-                const d = new Date(abierta.fecha);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const dateStr = `${year}-${month}-${day}`;
-                
-                const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config);
-                
-                db.query(
-                  `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
-                  [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
-                  (upErr) => {
-                    if (upErr) return res.status(500).json({ success: false, message: upErr.message });
-                    
-                    // EMITIR NOTIFICACION POR SOCKET
-                    const titulo = '¡Nueva Salida!';
-                    const mensaje = `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`;
-                    if(req.io) {
-                      req.io.emit('nueva_asistencia', {
-                        empresa_id: Number(empresa_id),
-                        tipo: 'salida',
-                        titulo: titulo,
-                        mensaje: mensaje,
-                        hora: hora
-                      });
+                try {
+                  // Parse date correctly from Date object or string
+                  const d = new Date(abierta.fecha);
+                  const year = d.getFullYear();
+                  const month = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  const dateStr = `${year}-${month}-${day}`;
+                  
+                  const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config);
+                  
+                  db.query(
+                    `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
+                    [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
+                    (upErr) => {
+                      if (upErr) return res.status(500).json({ success: false, message: 'DB Error: ' + upErr.message });
+                      
+                      // EMITIR NOTIFICACION POR SOCKET
+                      const titulo = '¡Nueva Salida!';
+                      const mensaje = `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`;
+                      if(req.io) {
+                        req.io.emit('nueva_asistencia', {
+                          empresa_id: Number(empresa_id),
+                          tipo: 'salida',
+                          titulo: titulo,
+                          mensaje: mensaje,
+                          hora: hora
+                        });
+                      }
+                      sendPushToEmpresa(empresa_id, titulo, mensaje);
+                      
+                      return res.json({ success: true, tipo: 'salida', hora, calculos: calc });
                     }
-                    sendPushToEmpresa(empresa_id, titulo, mensaje);
-                    
-                    return res.json({ success: true, tipo: 'salida', hora, calculos: calc });
-                  }
-                );
+                  );
+                } catch (calcError) {
+                  console.error('Calculation Error:', calcError);
+                  return res.status(500).json({ success: false, message: 'Calc Error: ' + calcError.message + ' | Stack: ' + calcError.stack });
+                }
               }
             );
           }
