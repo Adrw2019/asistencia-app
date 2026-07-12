@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "543127917229",
+    "project_id": "asistenciaapp-3ec4a",
+    "storage_bucket": "asistenciaapp-3ec4a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:543127917229:android:3a734ce31cd08f28ccec24",
+        "android_client_info": {
+          "package_name": "com.example.asistencia_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdftcgffAtHMpBoeIw2frkjyxR_Zuw6uU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

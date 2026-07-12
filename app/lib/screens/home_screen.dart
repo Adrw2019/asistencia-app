@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 import 'register_screen.dart';
@@ -26,6 +27,16 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     SocketService.connect();
     _load();
+    _setupFCM();
+  }
+
+  Future<void> _setupFCM() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission();
+    String? token = await messaging.getToken();
+    if (token != null) {
+      await ApiService.updateFCMToken(token);
+    }
   }
 
   Future<void> _load() async {
