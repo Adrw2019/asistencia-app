@@ -45,9 +45,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     final String salida = item['hora_salida'] ?? 'En turno';
                     final double horasT = double.tryParse(item['horas_trabajadas']?.toString() ?? '0') ?? 0;
                     final double horasE = double.tryParse(item['horas_extra']?.toString() ?? '0') ?? 0;
-                    final int pago = item['pago'] ?? 0;
-                    final int descuento = item['descuento'] ?? 0;
-                    final int minutosTarde = item['minutos_tarde'] ?? 0;
+                    final int pago = int.tryParse(item['pago']?.toString() ?? '0') ?? 0;
+                    final int descuento = int.tryParse(item['descuento']?.toString() ?? '0') ?? 0;
+                    final int minutosTarde = int.tryParse(item['minutos_tarde']?.toString() ?? '0') ?? 0;
 
                     return Card(
                       color: const Color(0xFF111328),

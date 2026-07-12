@@ -26,8 +26,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
     final res = await ApiService.getConfig();
     if (res['success'] == true) {
       final data = res['data'];
-      _horaEntrada.text = (data['hora_entrada_esperada'] ?? '').toString().substring(0, 5);
-      _horaSalida.text = (data['hora_salida_esperada'] ?? '').toString().substring(0, 5);
+      String he = (data['hora_entrada_esperada'] ?? '08:00:00').toString();
+      _horaEntrada.text = he.length >= 5 ? he.substring(0, 5) : he;
+      String hs = (data['hora_salida_esperada'] ?? '17:00:00').toString();
+      _horaSalida.text = hs.length >= 5 ? hs.substring(0, 5) : hs;
       _valorDia.text = (data['valor_dia'] ?? 60000).toString();
       _pagaExtras = (data['paga_extras'] ?? 1) == 1;
       _descuentaTarde = (data['descuenta_tarde'] ?? 1) == 1;
