@@ -76,41 +76,65 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> historial() async {
-    final response = await http.get(Uri.parse('$baseUrl/asistencias/historial'), headers: await _headers());
-    return _decode(response);
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/asistencias/historial'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> getConfig() async {
-    final response = await http.get(Uri.parse('$baseUrl/empresas/config'), headers: await _headers());
-    return _decode(response);
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/empresas/config'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> updateConfig(Map<String, dynamic> config) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/empresas/config'),
-      headers: await _headers(),
-      body: jsonEncode(config),
-    );
-    return _decode(response);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/empresas/config'),
+        headers: await _headers(),
+        body: jsonEncode(config),
+      );
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> deleteEmployee(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/employees/$id'), headers: await _headers());
-    return _decode(response);
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/employees/$id'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> deleteHistory(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/asistencias/$id'), headers: await _headers());
-    return _decode(response);
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/asistencias/$id'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> updateFCMToken(String token) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/fcm-token'),
-      headers: await _headers(),
-      body: jsonEncode({'fcm_token': token}),
-    );
-    return _decode(response);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/fcm-token'),
+        headers: await _headers(),
+        body: jsonEncode({'fcm_token': token}),
+      );
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Map<String, dynamic> _decode(http.Response response) {

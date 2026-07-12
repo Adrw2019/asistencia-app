@@ -111,14 +111,20 @@ exports.scan = (req, res) => {
             if (cErr) return res.status(500).json({ success: false, message: cErr.message });
             
             const esPrimerTurno = cRows[0].count === 0;
-            const calc = calcular(String(abierta.fecha).slice(0, 10), abierta.hora_entrada, hora, esPrimerTurno);
+            const d = new Date(abierta.fecha);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno);
             
             db.query(
               `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
               [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresaId],
               (upErr) => {
                 if (upErr) return res.status(500).json({ success: false, message: upErr.message });
-                return res.json({ success: true, tipo: 'salida', message: 'Salida registrada', asistencia_id: abierta.id, empleado, fecha: String(abierta.fecha).slice(0, 10), hora_entrada: abierta.hora_entrada, hora_salida: hora, calculos: calc });
+                return res.json({ success: true, tipo: 'salida', message: 'Salida registrada', asistencia_id: abierta.id, empleado, fecha: dateStr, hora_entrada: abierta.hora_entrada, hora_salida: hora, calculos: calc });
               }
             );
           }
@@ -232,8 +238,14 @@ exports.webScan = (req, res) => {
               [empresa_id, emp.id, abierta.fecha, abierta.id],
               (cErr, cRows) => {
                 if (cErr) return res.status(500).json({ success: false, message: cErr.message });
-                const esPrimerTurno = cRows[0].count === 0;
-                const calc = calcular(String(abierta.fecha).slice(0, 10), abierta.hora_entrada, hora, esPrimerTurno, config);
+                // Parse date correctly from Date object or string
+                const d = new Date(abierta.fecha);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                
+                const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config);
                 
                 db.query(
                   `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
