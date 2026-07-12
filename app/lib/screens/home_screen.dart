@@ -70,11 +70,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () async {
+            onPressed: () {
               final uri = Uri.parse(downloadUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
+              launchUrl(uri, mode: LaunchMode.externalApplication).catchError((e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al abrir el navegador')));
+                }
+                return false;
+              });
             },
             icon: const Icon(Icons.download),
             label: const Text('Descargar para imprimir'),
