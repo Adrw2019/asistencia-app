@@ -14,7 +14,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _celular = TextEditingController();
   final _cargo = TextEditingController();
   String _turno = '06:00';
-  final List<String> _turnosOpciones = ['06:00', '07:00', '14:00', '15:00'];
+  final Map<String, String> _turnosOpciones = {
+    '06:00': '06:00 a 14:00 (6 AM - 2 PM)',
+    '07:00': '07:00 a 15:00 (7 AM - 3 PM)',
+    '14:00': '14:00 a 22:00 (2 PM - 10 PM)',
+    '15:00': '15:00 a 23:00 (3 PM - 11 PM)',
+  };
   bool loading = false;
 
   Future<void> _save() async {
@@ -83,10 +88,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 dropdownColor: const Color(0xFF1E2235),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(labelText: 'Turno Asignado', prefixIcon: Icon(Icons.access_time, color: Color(0xFFE0A96D))),
-                items: _turnosOpciones.map((String value) {
+                items: _turnosOpciones.entries.map((entry) {
                   return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
+                    value: entry.key,
+                    child: Text(entry.value),
                   );
                 }).toList(),
                 onChanged: (newValue) {

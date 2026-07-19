@@ -136,8 +136,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _editTurno(int id, String currentTurno, String nombre) {
     String selectedTurno = currentTurno.length >= 5 ? currentTurno.substring(0, 5) : '06:00';
-    final List<String> turnos = ['06:00', '07:00', '14:00', '15:00'];
-    if (!turnos.contains(selectedTurno)) selectedTurno = '06:00';
+    final Map<String, String> turnos = {
+      '06:00': '06:00 a 14:00 (6 AM - 2 PM)',
+      '07:00': '07:00 a 15:00 (7 AM - 3 PM)',
+      '14:00': '14:00 a 22:00 (2 PM - 10 PM)',
+      '15:00': '15:00 a 23:00 (3 PM - 11 PM)',
+    };
+    if (!turnos.keys.contains(selectedTurno)) selectedTurno = '06:00';
 
     showDialog(
       context: context,
@@ -152,10 +157,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 dropdownColor: const Color(0xFF1E2235),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(labelText: 'Nuevo Turno', prefixIcon: Icon(Icons.access_time, color: Color(0xFFE0A96D))),
-                items: turnos.map((String value) {
+                items: turnos.entries.map((entry) {
                   return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
+                    value: entry.key,
+                    child: Text(entry.value),
                   );
                 }).toList(),
                 onChanged: (val) {
@@ -253,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
                       title: Text(e['nombre'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('C.C: ${e['cedula']} - Turno: ${e['turno'] ?? '06:00'}\n${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
+                      subtitle: Text('C.C: ${e['cedula']} - Turno: ${e['turno'] == '14:00' ? '14:00 a 22:00' : e['turno'] == '15:00' ? '15:00 a 23:00' : e['turno'] == '07:00' ? '07:00 a 15:00' : '06:00 a 14:00'}\n${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
