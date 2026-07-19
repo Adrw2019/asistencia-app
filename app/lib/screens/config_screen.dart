@@ -65,16 +65,18 @@ class _ConfigScreenState extends State<ConfigScreen> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _buildSectionTitle('Horarios (Formato 24h ej. 08:00)'),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: TextField(controller: _horaEntrada, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Hora Entrada'))),
-                    const SizedBox(width: 16),
-                    Expanded(child: TextField(controller: _horaSalida, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Hora Salida'))),
-                  ],
-                ),
-                const SizedBox(height: 32),
+                if (_modoCalculo == 1) ...[
+                  _buildSectionTitle('Horarios Base (Formato 24h ej. 08:00)'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: TextField(controller: _horaEntrada, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Hora Entrada'))),
+                      const SizedBox(width: 16),
+                      Expanded(child: TextField(controller: _horaSalida, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Hora Salida'))),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                ],
                 _buildSectionTitle('Modo de Cálculo'),
                 const SizedBox(height: 16),
                 Container(
