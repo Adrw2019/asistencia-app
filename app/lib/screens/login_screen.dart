@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _user,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Usuario / Empresa', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.person, color: Color(0xFFE0A96D)), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white30))),
+                decoration: const InputDecoration(labelText: 'Usuario / Correo', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.person, color: Color(0xFFE0A96D)), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white30))),
               ),
               const SizedBox(height: 16),
               TextField(
