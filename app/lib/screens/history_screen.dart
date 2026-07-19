@@ -11,6 +11,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   List<dynamic> _historial = [];
   bool _loading = true;
+  int _modoCalculo = 1;
 
   @override
   void initState() {
@@ -19,6 +20,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _load() async {
+    final conf = await ApiService.getConfig();
+    if (conf['success'] == true && conf['data'] != null) {
+      _modoCalculo = conf['data']['modo_calculo'] ?? 1;
+    }
     final res = await ApiService.historial();
     if (res['success'] == true) {
       _historial = res['data'] ?? [];
@@ -96,24 +101,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     ],
                                   ),
                                 ],
-                                if (descuento > 0) ...[
-                                  const SizedBox(height: 8),
+                                if (_modoCalculo == 1) ...[
+                                  if (descuento > 0) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
+                                        Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ],
+                                  const Divider(color: Colors.white24, height: 24),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
-                                      Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                      const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
+                                      Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
+                                    ],
+                                  ),
+                                ] else ...[
+                                  const Divider(color: Colors.white24, height: 24),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Semanas trabajadas (Turno):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
+                                      Text('${(horasT / 42.0).toStringAsFixed(2)} Semanas', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
                                     ],
                                   ),
                                 ],
-                                const Divider(color: Colors.white24, height: 24),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                    Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
-                                  ],
-                                ),
                                 const SizedBox(height: 16),
                                 Align(
                                   alignment: Alignment.centerRight,

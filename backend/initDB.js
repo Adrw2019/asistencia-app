@@ -14,6 +14,7 @@ const initDB = async () => {
       valor_dia INTEGER DEFAULT 60000,
       paga_extras SMALLINT DEFAULT 1,
       descuenta_tarde SMALLINT DEFAULT 1,
+      modo_calculo SMALLINT DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS empleados (
@@ -81,16 +82,13 @@ const initDB = async () => {
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN valor_dia INTEGER DEFAULT 60000", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN paga_extras SMALLINT DEFAULT 1", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN descuenta_tarde SMALLINT DEFAULT 1", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN modo_calculo SMALLINT DEFAULT 1", [], r));
     } catch(e) {}
 
     console.log('Base de datos Postgres inicializada correctamente.');
     
-    // Limpieza de datos de prueba obsoletos (admin, Empresa Principal, empleado de prueba)
-    db.query("DELETE FROM asistencias WHERE cedula = '80770763'");
-    db.query("DELETE FROM empleados WHERE cedula = '80770763'");
-    db.query("DELETE FROM usuarios WHERE username = 'admin'");
-    db.query("DELETE FROM empresas WHERE nombre = 'Empresa Principal'");
-    
+    // Las líneas de limpieza de datos de prueba se han eliminado para evitar errores
+    // al registrar empleados y empresas.
   } catch (error) {
     console.error('Error inicializando BD:', error);
   }

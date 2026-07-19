@@ -14,6 +14,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
   final _valorDia = TextEditingController();
   bool _pagaExtras = true;
   bool _descuentaTarde = true;
+  int _modoCalculo = 1;
   bool _loading = true;
 
   @override
@@ -33,6 +34,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
       _valorDia.text = (data['valor_dia'] ?? 60000).toString();
       _pagaExtras = (data['paga_extras'] ?? 1) == 1;
       _descuentaTarde = (data['descuenta_tarde'] ?? 1) == 1;
+      _modoCalculo = data['modo_calculo'] ?? 1;
     }
     setState(() => _loading = false);
   }
@@ -45,6 +47,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
       'valor_dia': int.tryParse(_valorDia.text) ?? 60000,
       'paga_extras': _pagaExtras ? 1 : 0,
       'descuenta_tarde': _descuentaTarde ? 1 : 0,
+      'modo_calculo': _modoCalculo,
     });
     setState(() => _loading = false);
     if (!mounted) return;
@@ -72,15 +75,37 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
+                _buildSectionTitle('Modo de Cálculo'),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(color: const Color(0xFF111328), borderRadius: BorderRadius.circular(12)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      isExpanded: true,
+                      dropdownColor: const Color(0xFF1D1E33),
+                      value: _modoCalculo,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFE0A96D)),
+                      items: const [
+                        DropdownMenuItem(value: 1, child: Text('Diario en Dinero', style: TextStyle(color: Colors.white))),
+                        DropdownMenuItem(value: 2, child: Text('Por Semanas / Turnos', style: TextStyle(color: Colors.white))),
+                      ],
+                      onChanged: (v) => setState(() => _modoCalculo = v ?? 1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
                 _buildSectionTitle('Sueldo y Reglas'),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _valorDia,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(labelText: 'Valor del Día Completo (\$)', prefixIcon: Icon(Icons.attach_money, color: Color(0xFFE0A96D))),
-                ),
-                const SizedBox(height: 16),
+                if (_modoCalculo == 1) ...[
+                  TextField(
+                    controller: _valorDia,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(labelText: 'Valor del Día Completo (\$)', prefixIcon: Icon(Icons.attach_money, color: Color(0xFFE0A96D))),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Container(
                   decoration: BoxDecoration(color: const Color(0xFF111328), borderRadius: BorderRadius.circular(12)),
                   child: SwitchListTile(

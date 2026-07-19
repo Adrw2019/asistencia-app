@@ -9,6 +9,7 @@ import 'register_screen.dart';
 import 'login_screen.dart';
 import 'config_screen.dart';
 import 'history_screen.dart';
+import 'summary_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -168,6 +169,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.history,
                           title: 'Historial',
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildOptionCard(
+                          icon: Icons.bar_chart,
+                          title: 'Resumen',
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SummaryScreen())),
                         ),
                       ),
                       const SizedBox(width: 8),

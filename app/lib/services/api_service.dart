@@ -84,6 +84,22 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> resumen({String? desde, String? hasta}) async {
+    try {
+      String url = '$baseUrl/asistencias/resumen';
+      List<String> queryParams = [];
+      if (desde != null) queryParams.add('desde=$desde');
+      if (hasta != null) queryParams.add('hasta=$hasta');
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
+      final response = await http.get(Uri.parse(url), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> getConfig() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/empresas/config'), headers: await _headers());
