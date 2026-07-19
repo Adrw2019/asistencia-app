@@ -134,6 +134,56 @@ class _HomeScreenState extends State<HomeScreen> {
     _load();
   }
 
+  void _editTurno(int id, String currentTurno, String nombre) {
+    String selectedTurno = currentTurno.length >= 5 ? currentTurno.substring(0, 5) : '06:00';
+    final List<String> turnos = ['06:00', '07:00', '14:00', '15:00'];
+    if (!turnos.contains(selectedTurno)) selectedTurno = '06:00';
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF111328),
+              title: Text('Turno de $nombre', style: const TextStyle(color: Colors.white)),
+              content: DropdownButtonFormField<String>(
+                value: selectedTurno,
+                dropdownColor: const Color(0xFF1E2235),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Nuevo Turno', prefixIcon: Icon(Icons.access_time, color: Color(0xFFE0A96D))),
+                items: turnos.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setDialogState(() => selectedTurno = val);
+                },
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    setState(() => loading = true);
+                    final res = await ApiService.updateEmployeeTurno(id, selectedTurno);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Actualizado')));
+                    }
+                    _load();
+                  },
+                  child: const Text('Guardar', style: TextStyle(color: Color(0xFFE0A96D))),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -203,10 +253,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
                       title: Text(e['nombre'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('Cédula: ${e['cedula']} - ${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () => _confirmDelete(e['id'], e['nombre']),
+                      subtitle: Text('C.C: ${e['cedula']} - Turno: ${e['turno'] ?? '06:00'}\n${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                            onPressed: () => _editTurno(e['id'], e['turno'] ?? '06:00', e['nombre']),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                            onPressed: () => _confirmDelete(e['id'], e['nombre']),
+                          ),
+                        ],
                       ),
                     ),
                   )).toList(),

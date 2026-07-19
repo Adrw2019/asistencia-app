@@ -24,6 +24,7 @@ const initDB = async () => {
       cedula VARCHAR(20) NOT NULL,
       cargo VARCHAR(50),
       celular VARCHAR(20),
+      turno VARCHAR(10) DEFAULT '06:00',
       estado SMALLINT DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE (empresa_id, cedula)
@@ -83,6 +84,7 @@ const initDB = async () => {
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN paga_extras SMALLINT DEFAULT 1", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN descuenta_tarde SMALLINT DEFAULT 1", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN modo_calculo SMALLINT DEFAULT 1", [], r));
+      await new Promise(r => db.query("ALTER TABLE empleados ADD COLUMN turno VARCHAR(10) DEFAULT '06:00'", [], r));
     } catch(e) {}
 
     console.log('Base de datos Postgres inicializada correctamente.');

@@ -52,13 +52,26 @@ class ApiService {
     return {'success': true, 'message': 'Si el usuario existe, se han enviado instrucciones para recuperar la contraseña (Simulado)'};
   }
 
-  static Future<Map<String, dynamic>> registerEmployee(String cedula, String nombre, String celular, String cargo) async {
+  static Future<Map<String, dynamic>> registerEmployee(String cedula, String nombre, String celular, String cargo, [String turno = '06:00']) async {
     final response = await http.post(
       Uri.parse('$baseUrl/employees/register'),
       headers: await _headers(),
-      body: jsonEncode({'cedula': cedula, 'nombre': nombre, 'celular': celular, 'cargo': cargo}),
+      body: jsonEncode({'cedula': cedula, 'nombre': nombre, 'celular': celular, 'cargo': cargo, 'turno': turno}),
     );
     return _decode(response);
+  }
+
+  static Future<Map<String, dynamic>> updateEmployeeTurno(int id, String turno) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/employees/$id/turno'),
+        headers: await _headers(),
+        body: jsonEncode({'turno': turno}),
+      );
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> getEmployees() async {

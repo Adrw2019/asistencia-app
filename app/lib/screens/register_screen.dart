@@ -13,13 +13,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nombre = TextEditingController();
   final _celular = TextEditingController();
   final _cargo = TextEditingController();
+  String _turno = '06:00';
+  final List<String> _turnosOpciones = ['06:00', '07:00', '14:00', '15:00'];
   bool loading = false;
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => loading = true);
     try {
-      final r = await ApiService.registerEmployee(_cedula.text.trim(), _nombre.text.trim(), _celular.text.trim(), _cargo.text.trim());
+      final r = await ApiService.registerEmployee(_cedula.text.trim(), _nombre.text.trim(), _celular.text.trim(), _cargo.text.trim(), _turno);
       if (!mounted) return;
       setState(() => loading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r['message'] ?? 'Proceso realizado')));
@@ -74,6 +76,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _cargo, 
                 style: const TextStyle(color: Colors.white), 
                 decoration: const InputDecoration(labelText: 'Cargo (Opcional)', prefixIcon: Icon(Icons.work, color: Color(0xFFE0A96D))),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _turno,
+                dropdownColor: const Color(0xFF1E2235),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Turno Asignado', prefixIcon: Icon(Icons.access_time, color: Color(0xFFE0A96D))),
+                items: _turnosOpciones.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  if (newValue != null) {
+                    setState(() { _turno = newValue; });
+                  }
+                },
               ),
               const SizedBox(height: 32),
               SizedBox(

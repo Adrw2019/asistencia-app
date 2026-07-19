@@ -19,7 +19,7 @@ function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
 function money(n) { return Math.round(Number(n) || 0); }
 
-function calcular(fecha, entrada, salida, esPrimerTurno = true, config) {
+function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr = '06:00') {
   const entradaDt = toDate(fecha, entrada);
   const salidaDt = toDate(fecha, salida);
   
@@ -28,18 +28,8 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config) {
   let finNormal = toDate(fecha, config?.hora_salida_esperada || '17:00:00');
   
   if (config?.modo_calculo === 2) {
-    const timeInHours = entradaDt.getHours() + (entradaDt.getMinutes() / 60);
-    const shifts = [6, 7, 14, 15];
-    let closest = 6;
-    let minDiff = 24;
-    for (let s of shifts) {
-      if (Math.abs(timeInHours - s) < minDiff) {
-        minDiff = Math.abs(timeInHours - s);
-        closest = s;
-      }
-    }
-    const closestStr = String(closest).padStart(2, '0') + ':00:00';
-    inicioNormal = toDate(fecha, closestStr);
+    const t = (turnoStr && turnoStr.length >= 5) ? turnoStr : '06:00';
+    inicioNormal = toDate(fecha, t + ':00');
     finNormal = new Date(inicioNormal.getTime() + 8 * 3600000); // turno de 8h
   }
   const valorDia = config?.valor_dia || 60000;
@@ -57,6 +47,7 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config) {
 
   if (esPrimerTurno) {
     minutosTarde = entradaDt > inicioNormal ? Math.round((entradaDt - inicioNormal) / 60000) : 0;
+    if (minutosTarde <= 5) minutosTarde = 0; // Tolerancia de 5 minutos
     minutosSalidaAnticipada = salidaDt < finNormal ? Math.round((finNormal - salidaDt) / 60000) : 0;
   }
   
@@ -138,7 +129,9 @@ exports.scan = (req, res) => {
             const day = String(d.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
             
-            const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno);
+            // We need config here, but it's not fetched in this old route. 
+            // In webScan it is fetched. We assume webScan is the one used by the app.
+            const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, null, empleado.turno);
             
             db.query(
               `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
@@ -213,9 +206,16 @@ exports.webScan = (req, res) => {
 
           if (!openRows.length) {
             // ENTRADA
-            const inicioNormal = toDate(String(fecha), config?.hora_entrada_esperada || '08:00:00');
+            let inicioNormal;
+            if (config?.modo_calculo === 2) {
+              const t = (emp.turno && emp.turno.length >= 5) ? emp.turno : '06:00';
+              inicioNormal = toDate(String(fecha), t + ':00');
+            } else {
+              inicioNormal = toDate(String(fecha), config?.hora_entrada_esperada || '08:00:00');
+            }
             const entradaDt = toDate(String(fecha), hora);
-            const minutosTarde = entradaDt > inicioNormal ? Math.round((entradaDt - inicioNormal) / 60000) : 0;
+            let minutosTarde = entradaDt > inicioNormal ? Math.round((entradaDt - inicioNormal) / 60000) : 0;
+            if (minutosTarde <= 5) minutosTarde = 0; // Tolerancia de 5 minutos
             const descuentaTarde = config?.descuenta_tarde !== 0;
             
             let advertencia = null;
@@ -272,7 +272,7 @@ exports.webScan = (req, res) => {
                   const day = String(d.getDate()).padStart(2, '0');
                   const dateStr = `${year}-${month}-${day}`;
                   
-                  const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config);
+                  const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config, emp.turno);
                   
                   db.query(
                     `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,

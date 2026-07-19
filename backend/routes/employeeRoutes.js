@@ -5,5 +5,6 @@ const c = require('../controllers/EmployeeController');
 router.get('/', auth, c.getAll);
 router.post('/register', auth, c.create);
 router.get('/:cedula', auth, c.getByCedula);
+router.put('/:id/turno', auth, c.updateTurno);
 router.delete('/:id', auth, c.delete);
 module.exports = router;

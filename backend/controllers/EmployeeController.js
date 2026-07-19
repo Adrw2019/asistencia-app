@@ -2,11 +2,11 @@ const db = require('../config/db');
 
 exports.create = (req, res) => {
   const empresaId = req.user.empresa_id;
-  const { cedula, nombre, celular, cargo } = req.body;
+  const { cedula, nombre, celular, cargo, turno } = req.body;
   if (!cedula || !nombre) return res.status(400).json({ success: false, message: 'Cédula y nombre son obligatorios' });
   db.query(
-    'INSERT INTO empleados (empresa_id, cedula, nombre, celular, cargo, estado) VALUES (?,?,?,?,?,1) RETURNING id',
-    [empresaId, cedula, nombre, celular || null, cargo || null],
+    'INSERT INTO empleados (empresa_id, cedula, nombre, celular, cargo, turno, estado) VALUES (?,?,?,?,?,?,1) RETURNING id',
+    [empresaId, cedula, nombre, celular || null, cargo || null, turno || '06:00'],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: err.message });
       res.json({ success: true, message: 'Empleado registrado', id: result.insertId });
@@ -36,6 +36,17 @@ exports.delete = (req, res) => {
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: err.message });
       res.json({ success: true, message: 'Empleado eliminado' });
+    }
+  );
+};
+
+exports.updateTurno = (req, res) => {
+  db.query(
+    'UPDATE empleados SET turno = ? WHERE id = ? AND empresa_id = ?',
+    [req.body.turno, req.params.id, req.user.empresa_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, message: 'Turno actualizado correctamente' });
     }
   );
 };
