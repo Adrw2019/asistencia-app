@@ -88,9 +88,16 @@ class ApiService {
     return _decode(response);
   }
 
-  static Future<Map<String, dynamic>> historial() async {
+  static Future<Map<String, dynamic>> historial({String? desde, String? hasta}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/asistencias/historial'), headers: await _headers());
+      String url = '$baseUrl/asistencias/historial';
+      List<String> queryParams = [];
+      if (desde != null) queryParams.add('desde=$desde');
+      if (hasta != null) queryParams.add('hasta=$hasta');
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
+      final response = await http.get(Uri.parse(url), headers: await _headers());
       return _decode(response);
     } catch (e) {
       return {'success': false, 'message': 'Error de conexión: $e'};

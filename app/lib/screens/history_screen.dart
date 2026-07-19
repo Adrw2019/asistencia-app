@@ -12,6 +12,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<dynamic> _historial = [];
   bool _loading = true;
   int _modoCalculo = 1;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -20,133 +21,167 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _load() async {
+    setState(() => _loading = true);
     final conf = await ApiService.getConfig();
     if (conf['success'] == true && conf['data'] != null) {
       _modoCalculo = conf['data']['modo_calculo'] ?? 1;
     }
-    final res = await ApiService.historial();
+
+    final startOfMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
+    final endOfMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
+    final desde = "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
+    final hasta = "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
+
+    final res = await ApiService.historial(desde: desde, hasta: hasta);
     if (res['success'] == true) {
       _historial = res['data'] ?? [];
     }
     setState(() => _loading = false);
   }
 
+  void _changeMonth(int delta) {
+    setState(() {
+      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + delta, 1);
+    });
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mesActual = "${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}";
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(title: const Text('Historial de Asistencias', style: TextStyle(color: Color(0xFFE0A96D)))),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _historial.isEmpty
-              ? const Center(child: Text('No hay registros todavía.', style: TextStyle(color: Colors.white70)))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _historial.length,
-                  itemBuilder: (context, index) {
-                    final item = _historial[index];
-                    final String fecha = (item['fecha'] ?? '').toString().split('T').first;
-                    final String entrada = item['hora_entrada'] ?? '?';
-                    final String salida = item['hora_salida'] ?? 'En turno';
-                    final double horasT = double.tryParse(item['horas_trabajadas']?.toString() ?? '0') ?? 0;
-                    final double horasE = double.tryParse(item['horas_extra']?.toString() ?? '0') ?? 0;
-                    final int pago = int.tryParse(item['pago']?.toString() ?? '0') ?? 0;
-                    final int descuento = int.tryParse(item['descuento']?.toString() ?? '0') ?? 0;
-                    final int minutosTarde = int.tryParse(item['minutos_tarde']?.toString() ?? '0') ?? 0;
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            color: const Color(0xFF111328),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(-1)),
+                Text('Mes: $mesActual', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(1)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _historial.isEmpty
+                    ? const Center(child: Text('No hay registros todavía.', style: TextStyle(color: Colors.white70)))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: _historial.length,
+                        itemBuilder: (context, index) {
+                          final item = _historial[index];
+                          final String fecha = (item['fecha'] ?? '').toString().split('T').first;
+                          final String entrada = item['hora_entrada'] ?? '?';
+                          final String salida = item['hora_salida'] ?? 'En turno';
+                          final double horasT = double.tryParse(item['horas_trabajadas']?.toString() ?? '0') ?? 0;
+                          final double horasE = double.tryParse(item['horas_extra']?.toString() ?? '0') ?? 0;
+                          final int pago = int.tryParse(item['pago']?.toString() ?? '0') ?? 0;
+                          final int descuento = int.tryParse(item['descuento']?.toString() ?? '0') ?? 0;
+                          final int minutosTarde = int.tryParse(item['minutos_tarde']?.toString() ?? '0') ?? 0;
 
-                    return Card(
-                      color: const Color(0xFF111328),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.white10)),
-                      child: ExpansionTile(
-                        iconColor: const Color(0xFFE0A96D),
-                        collapsedIconColor: Colors.white54,
-                        leading: const Icon(Icons.access_time_filled, color: Color(0xFFE0A96D)),
-                        title: Text('${item['nombre']} - $fecha', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                        subtitle: Text('Entrada: $entrada | Salida: $salida', style: const TextStyle(color: Colors.white70)),
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16.0),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF1D1E33),
-                              borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          return Card(
+                            color: const Color(0xFF111328),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.white10)),
+                            child: ExpansionTile(
+                              iconColor: const Color(0xFFE0A96D),
+                              collapsedIconColor: Colors.white54,
+                              leading: const Icon(Icons.access_time_filled, color: Color(0xFFE0A96D)),
+                              title: Text('${item['nombre']} - $fecha', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                              subtitle: Text('Entrada: $entrada | Salida: $salida', style: const TextStyle(color: Colors.white70)),
                               children: [
-                                Text('Cargo: ${item['cargo'] ?? '-'} | C.C: ${item['cedula']}', style: const TextStyle(color: Colors.white)),
-                                const Divider(color: Colors.white24, height: 24),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Horas trabajadas:', style: TextStyle(color: Colors.white70)),
-                                    Text('$horasT h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Horas extra:', style: TextStyle(color: Colors.white70)),
-                                    Text('$horasE h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                if (minutosTarde > 0) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Llegó tarde:', style: TextStyle(color: Colors.redAccent)),
-                                      Text('$minutosTarde min', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                                    ],
+                                Container(
+                                  padding: const EdgeInsets.all(16.0),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF1D1E33),
+                                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
                                   ),
-                                ],
-                                if (_modoCalculo == 1) ...[
-                                  if (descuento > 0) ...[
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
-                                        Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Cargo: ${item['cargo'] ?? '-'} | C.C: ${item['cedula']}', style: const TextStyle(color: Colors.white)),
+                                      const Divider(color: Colors.white24, height: 24),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text('Horas trabajadas:', style: TextStyle(color: Colors.white70)),
+                                          Text('$horasT h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text('Horas extra:', style: TextStyle(color: Colors.white70)),
+                                          Text('$horasE h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                      if (minutosTarde > 0) ...[
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Llegó tarde:', style: TextStyle(color: Colors.redAccent)),
+                                            Text('$minutosTarde min', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
                                       ],
-                                    ),
-                                  ],
-                                  const Divider(color: Colors.white24, height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                      Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
+                                      if (_modoCalculo == 1) ...[
+                                        if (descuento > 0) ...[
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
+                                              Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ],
+                                        const Divider(color: Colors.white24, height: 24),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
+                                            Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
+                                          ],
+                                        ),
+                                      ] else ...[
+                                        const Divider(color: Colors.white24, height: 24),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Semanas trabajadas (Turno):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
+                                            Text('${(horasT / 42.0).toStringAsFixed(2)} Semanas', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
+                                          ],
+                                        ),
+                                      ],
+                                      const SizedBox(height: 16),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: TextButton.icon(
+                                          onPressed: () => _confirmDelete(item['id']),
+                                          icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                                          label: const Text('Eliminar Registro', style: TextStyle(color: Colors.redAccent)),
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ] else ...[
-                                  const Divider(color: Colors.white24, height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Semanas trabajadas (Turno):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                      Text('${(horasT / 42.0).toStringAsFixed(2)} Semanas', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
-                                    ],
-                                  ),
-                                ],
-                                const SizedBox(height: 16),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton.icon(
-                                    onPressed: () => _confirmDelete(item['id']),
-                                    icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
-                                    label: const Text('Eliminar Registro', style: TextStyle(color: Colors.redAccent)),
-                                  ),
-                                ),
+                                )
                               ],
                             ),
-                          )
-                        ],
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+          ),
+        ],
+      ),
     );
   }
 
