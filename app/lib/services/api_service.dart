@@ -160,6 +160,15 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> deleteHistoryMonth({required String desde, required String hasta}) async {
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/asistencias/mes?desde=$desde&hasta=$hasta'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> updateFCMToken(String token) async {
     try {
       final response = await http.post(

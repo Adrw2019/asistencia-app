@@ -336,3 +336,19 @@ exports.delete = (req, res) => {
     }
   );
 };
+
+exports.deleteMes = (req, res) => {
+  const empresaId = req.user.empresa_id;
+  const { desde, hasta } = req.query;
+  
+  if (!desde || !hasta) return res.status(400).json({ success: false, message: 'Faltan fechas desde y hasta' });
+
+  db.query(
+    'DELETE FROM asistencias WHERE empresa_id = ? AND fecha >= ? AND fecha <= ?',
+    [empresaId, desde, hasta],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, message: `Se eliminaron ${result.affectedRows} registros del mes seleccionado.` });
+    }
+  );
+};

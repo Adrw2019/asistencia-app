@@ -52,7 +52,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
-      appBar: AppBar(title: const Text('Historial de Asistencias', style: TextStyle(color: Color(0xFFE0A96D)))),
+      appBar: AppBar(
+        title: const Text('Historial de Asistencias', style: TextStyle(color: Color(0xFFE0A96D))),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+            tooltip: 'Borrar mes actual',
+            onPressed: () => _confirmDeleteMonth(mesActual),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Container(
@@ -211,6 +220,42 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final res = await ApiService.deleteHistory(id);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Eliminado')));
+    }
+    _load();
+  }
+
+  void _confirmDeleteMonth(String mesActual) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF111328),
+        title: const Text('Borrar Mes Completo', style: TextStyle(color: Colors.white)),
+        content: Text('¿Estás seguro que deseas eliminar TODOS los registros de asistencia del mes $mesActual?\n\nEsta acción no se puede deshacer.', style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteHistoryMonth();
+            },
+            child: const Text('Eliminar Todo', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteHistoryMonth() async {
+    setState(() => _loading = true);
+    
+    final startOfMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
+    final endOfMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
+    final desde = "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
+    final hasta = "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
+
+    final res = await ApiService.deleteHistoryMonth(desde: desde, hasta: hasta);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Registros eliminados')));
     }
     _load();
   }
