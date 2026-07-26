@@ -34,7 +34,12 @@ function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
 
 function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr = '06:00') {
   const entradaDt = toDate(fecha, entrada);
-  const salidaDt = toDate(fecha, salida);
+  let salidaDt = toDate(fecha, salida);
+  
+  // Si la hora de salida es menor a la de entrada, significa que salió al día siguiente
+  if (salidaDt < entradaDt) {
+    salidaDt.setDate(salidaDt.getDate() + 1);
+  }
   
   // Usar configuración de la empresa o defaults
   let inicioNormal = toDate(fecha, config?.hora_entrada_esperada || '08:00:00');
