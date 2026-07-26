@@ -124,14 +124,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                           Text('$horasT h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                         ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text('Horas extra:', style: TextStyle(color: Colors.white70)),
-                                          Text('$horasE h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
+
                                       if (minutosTarde > 0) ...[
                                         const SizedBox(height: 8),
                                         Row(

@@ -15,6 +15,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
   bool _pagaExtras = true;
   bool _descuentaTarde = true;
   int _modoCalculo = 1;
+  bool _requiereGps = false;
+  final _latitud = TextEditingController();
+  final _longitud = TextEditingController();
   bool _loading = true;
 
   @override
@@ -35,6 +38,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
       _pagaExtras = (data['paga_extras'] ?? 1) == 1;
       _descuentaTarde = (data['descuenta_tarde'] ?? 1) == 1;
       _modoCalculo = data['modo_calculo'] ?? 1;
+      _requiereGps = (data['requiere_gps'] ?? 0) == 1;
+      _latitud.text = data['latitud'] != null ? data['latitud'].toString() : '';
+      _longitud.text = data['longitud'] != null ? data['longitud'].toString() : '';
     }
     setState(() => _loading = false);
   }
@@ -48,6 +54,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
       'paga_extras': _pagaExtras ? 1 : 0,
       'descuenta_tarde': _descuentaTarde ? 1 : 0,
       'modo_calculo': _modoCalculo,
+      'requiere_gps': _requiereGps ? 1 : 0,
+      'latitud': double.tryParse(_latitud.text) ?? 0.0,
+      'longitud': double.tryParse(_longitud.text) ?? 0.0,
     });
     setState(() => _loading = false);
     if (!mounted) return;
@@ -129,6 +138,29 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     onChanged: (v) => setState(() => _descuentaTarde = v),
                   ),
                 ),
+                const SizedBox(height: 32),
+                _buildSectionTitle('Validación por GPS'),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(color: const Color(0xFF111328), borderRadius: BorderRadius.circular(12)),
+                  child: SwitchListTile(
+                    activeColor: const Color(0xFFE0A96D),
+                    title: const Text('Requerir GPS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Valida que el escaneo se haga a menos de 50m del negocio', style: TextStyle(color: Colors.white54)),
+                    value: _requiereGps,
+                    onChanged: (v) => setState(() => _requiereGps = v),
+                  ),
+                ),
+                if (_requiereGps) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: TextField(controller: _latitud, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Latitud', prefixIcon: Icon(Icons.location_on, color: Color(0xFFE0A96D))))),
+                      const SizedBox(width: 16),
+                      Expanded(child: TextField(controller: _longitud, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Longitud', prefixIcon: Icon(Icons.location_on, color: Color(0xFFE0A96D))))),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity,

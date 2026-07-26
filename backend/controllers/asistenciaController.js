@@ -19,6 +19,19 @@ function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
 function money(n) { return Math.round(Number(n) || 0); }
 
+function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+  const R = 6371e3; // Radio de la tierra en m
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c; 
+}
+
 function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr = '06:00') {
   const entradaDt = toDate(fecha, entrada);
   const salidaDt = toDate(fecha, salida);
@@ -180,13 +193,23 @@ exports.resumen = (req, res) => {
 exports._calcular = calcular;
 
 exports.webScan = (req, res) => {
-  const { empresa_id, cedula, nombre } = req.body;
+  const { empresa_id, cedula, nombre, lat, lng } = req.body;
   if (!empresa_id || !cedula || !nombre) return res.status(400).json({ success: false, message: 'Faltan datos requeridos' });
 
   // 0. Obtener config de empresa
-  db.query('SELECT hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo FROM empresas WHERE id = ?', [empresa_id], (errConf, confRows) => {
+  db.query('SELECT hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo, requiere_gps, latitud, longitud FROM empresas WHERE id = ?', [empresa_id], (errConf, confRows) => {
     if (errConf) return res.status(500).json({ success: false, message: errConf.message });
     const config = confRows.length ? confRows[0] : null;
+
+    if (config?.requiere_gps === 1) {
+      if (!lat || !lng) {
+        return res.status(400).json({ success: false, message: 'Se requiere ubicación GPS para registrar asistencia.' });
+      }
+      const distance = getDistanceFromLatLonInM(lat, lng, config.latitud, config.longitud);
+      if (distance > 50) {
+        return res.status(400).json({ success: false, message: `Estás fuera de la zona permitida (${Math.round(distance)}m de distancia).` });
+      }
+    }
 
     // 1. Buscar o crear empleado
     db.query('SELECT * FROM empleados WHERE empresa_id = ? AND cedula = ? LIMIT 1', [empresa_id, cedula], (err, empRows) => {

@@ -85,6 +85,9 @@ const initDB = async () => {
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN descuenta_tarde SMALLINT DEFAULT 1", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN modo_calculo SMALLINT DEFAULT 1", [], r));
       await new Promise(r => db.query("ALTER TABLE empleados ADD COLUMN turno VARCHAR(10) DEFAULT '06:00'", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN requiere_gps SMALLINT DEFAULT 0", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN latitud DECIMAL(10,8)", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN longitud DECIMAL(11,8)", [], r));
     } catch(e) {}
 
     console.log('Base de datos Postgres inicializada correctamente.');
