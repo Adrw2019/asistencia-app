@@ -133,7 +133,24 @@ exports.scan = (req, res) => {
         }
 
         const abierta = openRows[0];
-        
+        const d = new Date(abierta.fecha);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        const diffHours = hoursBetween(toDate(dateStr, abierta.hora_entrada), toDate(fecha, hora));
+
+        if (diffHours > 16) {
+          // Olvidó marcar salida. Cerramos el anterior (0 horas) y marcamos nueva entrada.
+          db.query('UPDATE asistencias SET hora_salida=? WHERE id=? AND empresa_id=?', [abierta.hora_entrada, abierta.id, empresaId], () => {
+            db.query('INSERT INTO asistencias (empresa_id, empleado_id, cedula, fecha, hora_entrada) VALUES (?,?,?,?,?) RETURNING id', [empresaId, empleado.id, cedula, fecha, hora], (insErr, result) => {
+              if (insErr) return res.status(500).json({ success: false, message: insErr.message });
+              return res.json({ success: true, tipo: 'entrada', message: 'Entrada registrada (Turno anterior cerrado por olvido)', asistencia_id: result.insertId, empleado, fecha, hora_entrada: hora });
+            });
+          });
+          return;
+        }
+
         db.query(
           'SELECT COUNT(id) as count FROM asistencias WHERE empresa_id = ? AND empleado_id = ? AND fecha = ? AND id < ?',
           [empresaId, empleado.id, abierta.fecha, abierta.id],
@@ -141,11 +158,6 @@ exports.scan = (req, res) => {
             if (cErr) return res.status(500).json({ success: false, message: cErr.message });
             
             const esPrimerTurno = cRows[0].count === 0;
-            const d = new Date(abierta.fecha);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
             
             // We need config here, but it's not fetched in this old route. 
             // In webScan it is fetched. We assume webScan is the one used by the app.
@@ -286,6 +298,21 @@ exports.webScan = (req, res) => {
           } else {
             // SALIDA
             const abierta = openRows[0];
+            const d = new Date(abierta.fecha);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            const diffHours = hoursBetween(toDate(dateStr, abierta.hora_entrada), toDate(fecha, hora));
+            if (diffHours > 16) {
+              // Olvidó marcar salida. Cerramos el anterior con 0 horas (hora_salida = hora_entrada).
+              db.query('UPDATE asistencias SET hora_salida=? WHERE id=? AND empresa_id=?', [abierta.hora_entrada, abierta.id, empresa_id], () => {
+                procesarAsistencia(emp); // Volver a procesar para registrar como ENTRADA
+              });
+              return;
+            }
+
             db.query(
               'SELECT COUNT(id) as count FROM asistencias WHERE empresa_id = ? AND empleado_id = ? AND fecha = ? AND id < ?',
               [empresa_id, emp.id, abierta.fecha, abierta.id],
@@ -293,12 +320,6 @@ exports.webScan = (req, res) => {
                 if (cErr) return res.status(500).json({ success: false, message: cErr.message });
                 try {
                   const esPrimerTurno = cRows[0].count === 0;
-                  // Parse date correctly from Date object or string
-                  const d = new Date(abierta.fecha);
-                  const year = d.getFullYear();
-                  const month = String(d.getMonth() + 1).padStart(2, '0');
-                  const day = String(d.getDate()).padStart(2, '0');
-                  const dateStr = `${year}-${month}-${day}`;
                   
                   const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config, emp.turno);
                   

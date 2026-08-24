@@ -88,12 +88,13 @@ class ApiService {
     return _decode(response);
   }
 
-  static Future<Map<String, dynamic>> historial({String? desde, String? hasta}) async {
+  static Future<Map<String, dynamic>> historial({String? desde, String? hasta, String? cedula}) async {
     try {
       String url = '$baseUrl/asistencias/historial';
       List<String> queryParams = [];
       if (desde != null) queryParams.add('desde=$desde');
       if (hasta != null) queryParams.add('hasta=$hasta');
+      if (cedula != null && cedula.isNotEmpty) queryParams.add('cedula=$cedula');
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
       }
@@ -104,12 +105,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> resumen({String? desde, String? hasta}) async {
+  static Future<Map<String, dynamic>> resumen({String? desde, String? hasta, String? cedula}) async {
     try {
       String url = '$baseUrl/asistencias/resumen';
       List<String> queryParams = [];
       if (desde != null) queryParams.add('desde=$desde');
       if (hasta != null) queryParams.add('hasta=$hasta');
+      if (cedula != null && cedula.isNotEmpty) queryParams.add('cedula=$cedula');
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
       }

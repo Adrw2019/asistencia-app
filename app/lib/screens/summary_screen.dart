@@ -14,10 +14,25 @@ class _SummaryScreenState extends State<SummaryScreen> {
   int _modoCalculo = 1;
   DateTime _selectedDate = DateTime.now();
 
+  List<dynamic> _empleados = [];
+  String? _selectedCedula;
+
   @override
   void initState() {
     super.initState();
+    _loadEmpleados();
     _load();
+  }
+
+  Future<void> _loadEmpleados() async {
+    final res = await ApiService.getEmployees();
+    if (res['success'] == true) {
+      if (mounted) {
+        setState(() {
+          _empleados = res['data'] ?? [];
+        });
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -36,7 +51,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
     final desde = "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
     final hasta = "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
 
-    final res = await ApiService.resumen(desde: desde, hasta: hasta);
+    final res = await ApiService.resumen(desde: desde, hasta: hasta, cedula: _selectedCedula);
     if (res['success'] == true) {
       _resumen = res['data'] ?? [];
     }
@@ -72,12 +87,46 @@ class _SummaryScreenState extends State<SummaryScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             color: const Color(0xFF111328),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                IconButton(icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(-1)),
-                Text('Mes: $mesActual', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(1)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(-1)),
+                    Text('Mes: $mesActual', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(1)),
+                  ],
+                ),
+                if (_empleados.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFF1D1E33),
+                    value: _selectedCedula,
+                    hint: const Text('Todos los empleados', style: TextStyle(color: Colors.white54)),
+                    icon: const Icon(Icons.person, color: Color(0xFFE0A96D)),
+                    underline: Container(height: 1, color: Colors.white24),
+                    style: const TextStyle(color: Colors.white),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedCedula = newValue;
+                      });
+                      _load();
+                    },
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: null,
+                        child: Text('Todos los empleados'),
+                      ),
+                      ..._empleados.map<DropdownMenuItem<String>>((emp) {
+                        return DropdownMenuItem<String>(
+                          value: emp['cedula'].toString(),
+                          child: Text('${emp['nombre']} - ${emp['cedula']}'),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
