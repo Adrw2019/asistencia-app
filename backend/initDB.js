@@ -41,6 +41,7 @@ const initDB = async () => {
       pago INTEGER DEFAULT 0,
       horas_trabajadas DECIMAL(10,2) DEFAULT 0.00,
       horas_extra DECIMAL(10,2) DEFAULT 0.00,
+      horas_nocturnas DECIMAL(10,2) DEFAULT 0.00,
       descuento INTEGER DEFAULT 0,
       llego_tarde SMALLINT DEFAULT 0,
       minutos_tarde INTEGER DEFAULT 0,
@@ -76,24 +77,26 @@ const initDB = async () => {
       });
     });
     
-    // Migraciones de esquema seguras (ignoran error si columna ya existe)
+    // Migraciones de esquema seguras. IF NOT EXISTS evita errores y conserva los datos existentes.
     try {
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN hora_entrada_esperada TIME DEFAULT '08:00:00'", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN hora_salida_esperada TIME DEFAULT '17:00:00'", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN valor_dia INTEGER DEFAULT 60000", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN paga_extras SMALLINT DEFAULT 1", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN descuenta_tarde SMALLINT DEFAULT 1", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN modo_calculo SMALLINT DEFAULT 1", [], r));
-      await new Promise(r => db.query("ALTER TABLE empleados ADD COLUMN turno VARCHAR(10) DEFAULT '06:00'", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN requiere_gps SMALLINT DEFAULT 0", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN latitud DECIMAL(10,8)", [], r));
-      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN longitud DECIMAL(11,8)", [], r));
-    } catch(e) {}
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS hora_entrada_esperada TIME DEFAULT '08:00:00'", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS hora_salida_esperada TIME DEFAULT '17:00:00'", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS valor_dia INTEGER DEFAULT 60000", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS paga_extras SMALLINT DEFAULT 1", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS descuenta_tarde SMALLINT DEFAULT 1", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS modo_calculo SMALLINT DEFAULT 1", [], r));
+      await new Promise(r => db.query("ALTER TABLE empleados ADD COLUMN IF NOT EXISTS turno VARCHAR(10) DEFAULT '06:00'", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS requiere_gps SMALLINT DEFAULT 0", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS latitud DECIMAL(10,8)", [], r));
+      await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS longitud DECIMAL(11,8)", [], r));
+      await new Promise(r => db.query("ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS horas_nocturnas DECIMAL(10,2) DEFAULT 0.00", [], r));
+    } catch(e) {
+      console.error('Error ejecutando migraciones seguras:', e);
+    }
 
     console.log('Base de datos Postgres inicializada correctamente.');
     
-    // Las líneas de limpieza de datos de prueba se han eliminado para evitar errores
-    // al registrar empleados y empresas.
+    // No se limpian datos de empleados ni asistencias durante el arranque.
   } catch (error) {
     console.error('Error inicializando BD:', error);
   }
