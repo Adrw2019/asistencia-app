@@ -61,6 +61,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _load();
   }
 
+  Map<String, List<dynamic>> get _historialAgrupado {
+    Map<String, List<dynamic>> grouped = {};
+    for (var item in _historial) {
+      final key = '${item['nombre']} - ${item['cedula']}';
+      if (!grouped.containsKey(key)) {
+        grouped[key] = [];
+      }
+      grouped[key]!.add(item);
+    }
+    return grouped;
+  }
+
   @override
   Widget build(BuildContext context) {
     final mesActual = "${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}";
@@ -132,17 +144,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ? const Center(child: Text('No hay registros todavía.', style: TextStyle(color: Colors.white70)))
                     : ListView.builder(
                         padding: const EdgeInsets.all(12),
-                        itemCount: _historial.length,
+                        itemCount: _historialAgrupado.keys.length,
                         itemBuilder: (context, index) {
-                          final item = _historial[index];
-                          final String fecha = (item['fecha'] ?? '').toString().split('T').first;
-                          final String entrada = item['hora_entrada'] ?? '?';
-                          final String salida = item['hora_salida'] ?? 'En turno';
-                          final double horasT = double.tryParse(item['horas_trabajadas']?.toString() ?? '0') ?? 0;
-                          final double horasE = double.tryParse(item['horas_extra']?.toString() ?? '0') ?? 0;
-                          final int pago = int.tryParse(item['pago']?.toString() ?? '0') ?? 0;
-                          final int descuento = int.tryParse(item['descuento']?.toString() ?? '0') ?? 0;
-                          final int minutosTarde = int.tryParse(item['minutos_tarde']?.toString() ?? '0') ?? 0;
+                          final String empleadoKey = _historialAgrupado.keys.elementAt(index);
+                          final List<dynamic> registros = _historialAgrupado[empleadoKey]!;
 
                           return Card(
                             color: const Color(0xFF111328),
@@ -151,81 +156,113 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             child: ExpansionTile(
                               iconColor: const Color(0xFFE0A96D),
                               collapsedIconColor: Colors.white54,
-                              leading: const Icon(Icons.access_time_filled, color: Color(0xFFE0A96D)),
-                              title: Text('${item['nombre']} - $fecha', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                              subtitle: Text('Entrada: $entrada | Salida: $salida', style: const TextStyle(color: Colors.white70)),
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16.0),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF1D1E33),
-                                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Cargo: ${item['cargo'] ?? '-'} | C.C: ${item['cedula']}', style: const TextStyle(color: Colors.white)),
-                                      const Divider(color: Colors.white24, height: 24),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text('Horas trabajadas:', style: TextStyle(color: Colors.white70)),
-                                          Text('$horasT h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
+                              leading: const Icon(Icons.person, color: Color(0xFFE0A96D)),
+                              title: Text(empleadoKey, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                              subtitle: Text('${registros.length} registros en el mes', style: const TextStyle(color: Colors.white70)),
+                              children: registros.map((item) {
+                                final String fecha = (item['fecha'] ?? '').toString().split('T').first;
+                                final String entrada = item['hora_entrada'] ?? '?';
+                                final String salida = item['hora_salida'] ?? 'En turno';
+                                final double horasT = double.tryParse(item['horas_trabajadas']?.toString() ?? '0') ?? 0;
+                                final double horasN = double.tryParse(item['horas_nocturnas']?.toString() ?? '0') ?? 0;
+                                final int pago = int.tryParse(item['pago']?.toString() ?? '0') ?? 0;
+                                final int descuento = int.tryParse(item['descuento']?.toString() ?? '0') ?? 0;
+                                final int minutosTarde = int.tryParse(item['minutos_tarde']?.toString() ?? '0') ?? 0;
 
-                                      if (minutosTarde > 0) ...[
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text('Llegó tarde:', style: TextStyle(color: Colors.redAccent)),
-                                            Text('$minutosTarde min', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
-                                      ],
-                                      if (_modoCalculo == 1) ...[
-                                        if (descuento > 0) ...[
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  child: Card(
+                                    color: const Color(0xFF1D1E33),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white10)),
+                                    child: ExpansionTile(
+                                      iconColor: const Color(0xFFE0A96D),
+                                      collapsedIconColor: Colors.white54,
+                                      leading: const Icon(Icons.calendar_today, color: Color(0xFFE0A96D), size: 20),
+                                      title: Text(fecha, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                      subtitle: Text('Entrada: $entrada | Salida: $salida', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(16.0),
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF111328),
+                                            borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
-                                              Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  const Text('Horas trabajadas:', style: TextStyle(color: Colors.white70)),
+                                                  Text('$horasT h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                                ],
+                                              ),
+                                              if (horasN > 0) ...[
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    const Text('Horas nocturnas:', style: TextStyle(color: Colors.white70)),
+                                                    Text('$horasN h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                                  ],
+                                                ),
+                                              ],
+                                              if (minutosTarde > 0) ...[
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    const Text('Llegó tarde:', style: TextStyle(color: Colors.redAccent)),
+                                                    Text('$minutosTarde min', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                                  ],
+                                                ),
+                                              ],
+                                              if (_modoCalculo == 1) ...[
+                                                if (descuento > 0) ...[
+                                                  const SizedBox(height: 8),
+                                                  Row(
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    children: [
+                                                      const Text('Descuento por tardanza:', style: TextStyle(color: Colors.redAccent)),
+                                                      Text('-\$$descuento', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                                    ],
+                                                  ),
+                                                ],
+                                                const Divider(color: Colors.white24, height: 24),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 14)),
+                                                    Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 16)),
+                                                  ],
+                                                ),
+                                              ] else ...[
+                                                const Divider(color: Colors.white24, height: 24),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    const Text('Semanas trabajadas (Turno):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 14)),
+                                                    Text('${(horasT / 42.0).toStringAsFixed(2)} Semanas', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 16)),
+                                                  ],
+                                                ),
+                                              ],
+                                              const SizedBox(height: 16),
+                                              Align(
+                                                alignment: Alignment.centerRight,
+                                                child: TextButton.icon(
+                                                  onPressed: () => _confirmDelete(item['id']),
+                                                  icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                                                  label: const Text('Eliminar Registro', style: TextStyle(color: Colors.redAccent)),
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                        ],
-                                        const Divider(color: Colors.white24, height: 24),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                            Text('\$$pago', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
-                                          ],
-                                        ),
-                                      ] else ...[
-                                        const Divider(color: Colors.white24, height: 24),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text('Semanas trabajadas (Turno):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                            Text('${(horasT / 42.0).toStringAsFixed(2)} Semanas', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
-                                          ],
-                                        ),
+                                        )
                                       ],
-                                      const SizedBox(height: 16),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: TextButton.icon(
-                                          onPressed: () => _confirmDelete(item['id']),
-                                          icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
-                                          label: const Text('Eliminar Registro', style: TextStyle(color: Colors.redAccent)),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                )
-                              ],
+                                );
+                              }).toList(),
                             ),
                           );
                         },

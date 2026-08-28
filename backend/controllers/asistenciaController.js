@@ -19,6 +19,19 @@ function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
 function money(n) { return Math.round(Number(n) || 0); }
 
+function calcularHorasNocturnas(entradaDt, salidaDt) {
+  let nocturnasMs = 0;
+  let currentDt = new Date(entradaDt.getTime());
+  while (currentDt < salidaDt) {
+    const h = currentDt.getHours();
+    if (h >= 21 || h < 6) {
+      nocturnasMs += 60000;
+    }
+    currentDt.setMinutes(currentDt.getMinutes() + 1);
+  }
+  return nocturnasMs / 3600000;
+}
+
 function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
   const R = 6371e3; // Radio de la tierra en m
@@ -59,6 +72,7 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr
   const recargoExtra = 1.5;
 
   const horasTrabajadas = hoursBetween(entradaDt, salidaDt);
+  const horasNocturnas = calcularHorasNocturnas(entradaDt, salidaDt);
   
   let minutosTarde = 0;
   let minutosSalidaAnticipada = 0;
@@ -92,6 +106,7 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr
   return {
     horas_trabajadas: Number(horasTrabajadas.toFixed(2)),
     horas_extra: Number(horasExtra.toFixed(2)),
+    horas_nocturnas: Number(horasNocturnas.toFixed(2)),
     descuento,
     pago,
     llego_tarde: minutosTarde > 0 ? 1 : 0,
@@ -164,8 +179,8 @@ exports.scan = (req, res) => {
             const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, null, empleado.turno);
             
             db.query(
-              `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
-              [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresaId],
+              `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
+              [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresaId],
               (upErr) => {
                 if (upErr) return res.status(500).json({ success: false, message: upErr.message });
                 return res.json({ success: true, tipo: 'salida', message: 'Salida registrada', asistencia_id: abierta.id, empleado, fecha: dateStr, hora_entrada: abierta.hora_entrada, hora_salida: hora, calculos: calc });
@@ -197,7 +212,7 @@ exports.resumen = (req, res) => {
   const empresaId = req.user.empresa_id;
   const { desde, hasta } = req.query;
   const params = [empresaId];
-  let sql = `SELECT e.cedula,e.nombre,COUNT(a.id) turnos,SUM(a.horas_trabajadas) horas,SUM(a.horas_extra) extras,SUM(a.descuento) descuentos,SUM(a.pago) total FROM asistencias a INNER JOIN empleados e ON e.id=a.empleado_id WHERE a.empresa_id=? AND a.hora_salida IS NOT NULL`;
+  let sql = `SELECT e.cedula,e.nombre,COUNT(a.id) turnos,SUM(a.horas_trabajadas) horas,SUM(a.horas_extra) extras,SUM(a.horas_nocturnas) nocturnas,SUM(a.descuento) descuentos,SUM(a.pago) total FROM asistencias a INNER JOIN empleados e ON e.id=a.empleado_id WHERE a.empresa_id=? AND a.hora_salida IS NOT NULL`;
   if (desde) { sql += ' AND a.fecha>=?'; params.push(desde); }
   if (hasta) { sql += ' AND a.fecha<=?'; params.push(hasta); }
   sql += ' GROUP BY e.id,e.cedula,e.nombre ORDER BY e.nombre';
@@ -324,8 +339,8 @@ exports.webScan = (req, res) => {
                   const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config, emp.turno);
                   
                   db.query(
-                    `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
-                    [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
+                    `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
+                    [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
                     (upErr) => {
                       if (upErr) return res.status(500).json({ success: false, message: 'DB Error: ' + upErr.message });
                       
