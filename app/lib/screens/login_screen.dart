@@ -27,9 +27,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('username', _user.text.trim());
       await SocketService.connect();
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(r['message'] ?? 'Error de login')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(r['message'] ?? 'Error de login')));
     }
   }
 
@@ -37,50 +39,94 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.business_center, size: 80, color: Color(0xFFE0A96D)),
-              const SizedBox(height: 24),
-              const Text('Asistencia', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(height: 8),
-              const Text('Control de personal para empresas', style: TextStyle(fontSize: 16, color: Colors.white54)),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _user,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Usuario / Correo', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.person, color: Color(0xFFE0A96D)), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white30))),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.business_center,
+                      size: 80, color: Color(0xFFE0A96D)),
+                  const SizedBox(height: 24),
+                  const Text('Asistencia',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                  const SizedBox(height: 8),
+                  const Text('Control de personal para empresas',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.white54)),
+                  const SizedBox(height: 48),
+                  TextField(
+                    controller: _user,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                        labelText: 'Usuario / Correo',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        prefixIcon:
+                            Icon(Icons.person, color: Color(0xFFE0A96D)),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white30))),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _pass,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                        labelText: 'Contraseña',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        prefixIcon: Icon(Icons.lock, color: Color(0xFFE0A96D)),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white30))),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE0A96D)),
+                      onPressed: _loading ? null : _login,
+                      child: Text(_loading ? 'INGRESANDO...' : 'INGRESAR',
+                          style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen())),
+                      child: const Text('¿Olvidaste tu contraseña?',
+                          style: TextStyle(color: Colors.white70)),
+                    ),
+                  ),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterCompanyScreen())),
+                      child: const Text('Crear nueva empresa',
+                          style: TextStyle(
+                              color: Color(0xFFE0A96D),
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  )
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _pass,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Contraseña', labelStyle: TextStyle(color: Colors.white70), prefixIcon: Icon(Icons.lock, color: Color(0xFFE0A96D)), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white30))),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE0A96D)),
-                  onPressed: _loading ? null : _login,
-                  child: Text(_loading ? 'INGRESANDO...' : 'INGRESAR', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-                child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(color: Colors.white70)),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterCompanyScreen())),
-                child: const Text('Crear nueva empresa', style: TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold)),
-              )
-            ],
+            ),
           ),
         ),
       ),

@@ -56,52 +56,73 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.clear();
     SocketService.disconnect();
     if (!mounted) return;
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   void _showQR() async {
     final prefs = await SharedPreferences.getInstance();
     final empresaId = prefs.getInt('empresa_id');
-    final url = ApiService.baseUrl.replaceAll('/api', '/public/formulario.html?empresa=$empresaId');
-    final downloadUrl = ApiService.baseUrl.replaceAll('/api', '/imprimir-qr?empresa_id=$empresaId');
-    
-    showDialog(context: context, builder: (_) => AlertDialog(
-      backgroundColor: const Color(0xFF111328),
-      title: const Text('QR para Empleados', textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-            child: SizedBox(
-              width: 250,
-              height: 250,
-              child: QrImageView(data: url, version: QrVersions.auto, size: 250, backgroundColor: Colors.white),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              final uri = Uri.parse(downloadUrl);
-              launchUrl(uri, mode: LaunchMode.externalApplication).catchError((e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al abrir el navegador')));
-                }
-                return false;
-              });
-            },
-            icon: const Icon(Icons.download),
-            label: const Text('Descargar para imprimir'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE0A96D),
-              foregroundColor: const Color(0xFF0A0E21),
-            ),
-          ),
-        ],
-      ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar', style: TextStyle(color: Colors.white54)))]
-    ));
+    final url = ApiService.baseUrl
+        .replaceAll('/api', '/public/formulario.html?empresa=$empresaId');
+    final downloadUrl = ApiService.baseUrl
+        .replaceAll('/api', '/imprimir-qr?empresa_id=$empresaId');
+
+    showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+                backgroundColor: const Color(0xFF111328),
+                title: const Text('QR para Empleados',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: SizedBox(
+                        width: 250,
+                        height: 250,
+                        child: QrImageView(
+                            data: url,
+                            version: QrVersions.auto,
+                            size: 250,
+                            backgroundColor: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final uri = Uri.parse(downloadUrl);
+                        launchUrl(uri, mode: LaunchMode.externalApplication)
+                            .catchError((e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Error al abrir el navegador')));
+                          }
+                          return false;
+                        });
+                      },
+                      icon: const Icon(Icons.download),
+                      label: const Text('Descargar para imprimir'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE0A96D),
+                        foregroundColor: const Color(0xFF0A0E21),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cerrar',
+                          style: TextStyle(color: Colors.white54)))
+                ]));
   }
 
   void _confirmDelete(int id, String nombre) {
@@ -109,16 +130,22 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF111328),
-        title: const Text('Eliminar Empleado', style: TextStyle(color: Colors.white)),
-        content: Text('¿Estás seguro que deseas eliminar a $nombre?', style: const TextStyle(color: Colors.white70)),
+        title: const Text('Eliminar Empleado',
+            style: TextStyle(color: Colors.white)),
+        content: Text('¿Estás seguro que deseas eliminar a $nombre?',
+            style: const TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Colors.white54))),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteEmployee(id);
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+            child: const Text('Eliminar',
+                style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -129,13 +156,15 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => loading = true);
     final res = await ApiService.deleteEmployee(id);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Eliminado')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(res['message'] ?? 'Eliminado')));
     }
     _load();
   }
 
   void _editTurno(int id, String currentTurno, String nombre) {
-    String selectedTurno = currentTurno.length >= 5 ? currentTurno.substring(0, 5) : '06:00';
+    String selectedTurno =
+        currentTurno.length >= 5 ? currentTurno.substring(0, 5) : '06:00';
     final Map<String, String> turnos = {
       '06:00': '06:00 a 14:00 (6 AM - 2 PM)',
       '07:00': '07:00 a 15:00 (7 AM - 3 PM)',
@@ -147,44 +176,52 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF111328),
-              title: Text('Turno de $nombre', style: const TextStyle(color: Colors.white)),
-              content: DropdownButtonFormField<String>(
-                value: selectedTurno,
-                dropdownColor: const Color(0xFF1E2235),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Nuevo Turno', prefixIcon: Icon(Icons.access_time, color: Color(0xFFE0A96D))),
-                items: turnos.entries.map((entry) {
-                  return DropdownMenuItem<String>(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setDialogState(() => selectedTurno = val);
+        return StatefulBuilder(builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF111328),
+            title: Text('Turno de $nombre',
+                style: const TextStyle(color: Colors.white)),
+            content: DropdownButtonFormField<String>(
+              value: selectedTurno,
+              dropdownColor: const Color(0xFF1E2235),
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                  labelText: 'Nuevo Turno',
+                  prefixIcon:
+                      Icon(Icons.access_time, color: Color(0xFFE0A96D))),
+              items: turnos.entries.map((entry) {
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(entry.value),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) setDialogState(() => selectedTurno = val);
+              },
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar',
+                      style: TextStyle(color: Colors.white54))),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  setState(() => loading = true);
+                  final res =
+                      await ApiService.updateEmployeeTurno(id, selectedTurno);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(res['message'] ?? 'Actualizado')));
+                  }
+                  _load();
                 },
+                child: const Text('Guardar',
+                    style: TextStyle(color: Color(0xFFE0A96D))),
               ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    setState(() => loading = true);
-                    final res = await ApiService.updateEmployeeTurno(id, selectedTurno);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Actualizado')));
-                    }
-                    _load();
-                  },
-                  child: const Text('Guardar', style: TextStyle(color: Color(0xFFE0A96D))),
-                ),
-              ],
-            );
-          }
-        );
+            ],
+          );
+        });
       },
     );
   }
@@ -195,99 +232,185 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0A0E21),
-        title: Text(empresa.isEmpty ? 'Asistencia' : empresa, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE0A96D))),
+        title: Text(empresa.isEmpty ? 'Asistencia' : empresa,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Color(0xFFE0A96D))),
         actions: [
-          IconButton(icon: const Icon(Icons.logout, color: Colors.white70), onPressed: _logout),
+          IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white70),
+              onPressed: _logout),
         ],
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const Text('Opciones Principales', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildOptionCard(
-                          icon: Icons.qr_code,
-                          title: 'Código QR',
-                          onTap: _showQR,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildOptionCard(
-                          icon: Icons.history,
-                          title: 'Historial',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildOptionCard(
-                          icon: Icons.bar_chart,
-                          title: 'Resumen',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SummaryScreen())),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildOptionCard(
-                          icon: Icons.settings,
-                          title: 'Config.',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConfigScreen())),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Empleados de esta empresa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
-                  const SizedBox(height: 12),
-                  ...empleados.map((e) => Card(
-                    color: const Color(0xFF111328),
-                    margin: const EdgeInsets.only(bottom: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: ListTile(
-                      leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
-                      title: Text(e['nombre'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('C.C: ${e['cedula']} - Turno: ${e['turno'] == '14:00' ? '14:00 a 22:00' : e['turno'] == '15:00' ? '15:00 a 23:00' : e['turno'] == '07:00' ? '07:00 a 15:00' : '06:00 a 14:00'}\n${e['cargo'] ?? ''}', style: const TextStyle(color: Colors.white54)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                            onPressed: () => _editTurno(e['id'], e['turno'] ?? '06:00', e['nombre']),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.redAccent),
-                            onPressed: () => _confirmDelete(e['id'], e['nombre']),
-                          ),
-                        ],
-                      ),
+              child: SafeArea(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return ListView(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
+                          children: [
+                            const Text('Opciones Principales',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white70)),
+                            const SizedBox(height: 16),
+                            _buildOptionCards(constraints.maxWidth),
+                            const SizedBox(height: 24),
+                            const Text('Empleados de esta empresa',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white70)),
+                            const SizedBox(height: 12),
+                            if (empleados.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 32),
+                                child: Center(
+                                    child: Text('No hay empleados registrados.',
+                                        style:
+                                            TextStyle(color: Colors.white54))),
+                              )
+                            else if (constraints.maxWidth > 800)
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: empleados
+                                    .map((e) => SizedBox(
+                                          width:
+                                              (constraints.maxWidth - 52) / 2,
+                                          child: _buildEmployeeCard(e),
+                                        ))
+                                    .toList(),
+                              )
+                            else
+                              ...empleados.map((e) => _buildEmployeeCard(e)),
+                            const SizedBox(height: 80),
+                          ],
+                        );
+                      },
                     ),
-                  )).toList(),
-                ],
+                  ),
+                ),
               ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())).then((_) => _load()),
-        backgroundColor: const Color(0xFFE0A96D),
-        foregroundColor: const Color(0xFF0A0E21),
-        icon: const Icon(Icons.person_add),
-        label: const Text('Empleado', style: TextStyle(fontWeight: FontWeight.bold)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(right: 12.0, bottom: 20.0),
+        child: FloatingActionButton.extended(
+          onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()))
+              .then((_) => _load()),
+          backgroundColor: const Color(0xFFE0A96D),
+          foregroundColor: const Color(0xFF0A0E21),
+          icon: const Icon(Icons.person_add),
+          label: const Text('Empleado',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
       ),
     );
   }
 
-  Widget _buildOptionCard({required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _buildOptionCards(double maxWidth) {
+    final c1 = _buildOptionCard(
+      icon: Icons.qr_code,
+      title: 'Código QR',
+      onTap: _showQR,
+    );
+    final c2 = _buildOptionCard(
+      icon: Icons.history,
+      title: 'Historial',
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+    );
+    final c3 = _buildOptionCard(
+      icon: Icons.bar_chart,
+      title: 'Resumen',
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const SummaryScreen())),
+    );
+    final c4 = _buildOptionCard(
+      icon: Icons.settings,
+      title: 'Config.',
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const ConfigScreen())),
+    );
+
+    if (maxWidth > 800) {
+      return Row(
+        children: [
+          Expanded(child: c1),
+          const SizedBox(width: 12),
+          Expanded(child: c2),
+          const SizedBox(width: 12),
+          Expanded(child: c3),
+          const SizedBox(width: 12),
+          Expanded(child: c4),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: c1),
+              const SizedBox(width: 12),
+              Expanded(child: c2),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: c3),
+              const SizedBox(width: 12),
+              Expanded(child: c4),
+            ],
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildEmployeeCard(dynamic e) {
+    return Card(
+      color: const Color(0xFF111328),
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.badge, color: Color(0xFFE0A96D)),
+        title: Text(e['nombre'] ?? '',
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white)),
+        subtitle: Text(
+            'C.C: ${e['cedula']} - Turno: ${e['turno'] == '14:00' ? '14:00 a 22:00' : e['turno'] == '15:00' ? '15:00 a 23:00' : e['turno'] == '07:00' ? '07:00 a 15:00' : '06:00 a 14:00'}\n${e['cargo'] ?? ''}',
+            style: const TextStyle(color: Colors.white54)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blueAccent),
+              onPressed: () =>
+                  _editTurno(e['id'], e['turno'] ?? '06:00', e['nombre']),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.redAccent),
+              onPressed: () => _confirmDelete(e['id'], e['nombre']),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionCard(
+      {required IconData icon,
+      required String title,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -297,13 +420,20 @@ class _HomeScreenState extends State<HomeScreen> {
           color: const Color(0xFF1D1E33),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white10),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+          boxShadow: const [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
+          ],
         ),
         child: Column(
           children: [
             Icon(icon, size: 36, color: const Color(0xFFE0A96D)),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)),
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 16)),
           ],
         ),
       ),

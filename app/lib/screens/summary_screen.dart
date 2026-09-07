@@ -37,7 +37,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    
+
     // Obtener configuración para saber si mostrar Semanas o Dinero
     final conf = await ApiService.getConfig();
     if (conf['success'] == true && conf['data'] != null) {
@@ -47,32 +47,38 @@ class _SummaryScreenState extends State<SummaryScreen> {
     // Calcular inicio y fin del mes seleccionado
     final startOfMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final endOfMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-    
-    final desde = "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
-    final hasta = "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
 
-    final res = await ApiService.resumen(desde: desde, hasta: hasta, cedula: _selectedCedula);
+    final desde =
+        "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
+    final hasta =
+        "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
+
+    final res = await ApiService.resumen(
+        desde: desde, hasta: hasta, cedula: _selectedCedula);
     if (res['success'] == true) {
       _resumen = res['data'] ?? [];
     }
     setState(() => _loading = false);
   }
-  
+
   void _changeMonth(int delta) {
     setState(() {
-      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + delta, 1);
+      _selectedDate =
+          DateTime(_selectedDate.year, _selectedDate.month + delta, 1);
     });
     _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final mesActual = "${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}";
-    
+    final mesActual =
+        "${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}";
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
       appBar: AppBar(
-        title: const Text('Resumen Mensual', style: TextStyle(color: Color(0xFFE0A96D))),
+        title: const Text('Resumen Mensual',
+            style: TextStyle(color: Color(0xFFE0A96D))),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
@@ -81,123 +87,200 @@ class _SummaryScreenState extends State<SummaryScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Selector de Mes
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            color: const Color(0xFF111328),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(-1)),
-                    Text('Mes: $mesActual', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFFE0A96D)), onPressed: () => _changeMonth(1)),
-                  ],
-                ),
-                if (_empleados.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  DropdownButton<String>(
-                    isExpanded: true,
-                    dropdownColor: const Color(0xFF1D1E33),
-                    value: _selectedCedula,
-                    hint: const Text('Todos los empleados', style: TextStyle(color: Colors.white54)),
-                    icon: const Icon(Icons.person, color: Color(0xFFE0A96D)),
-                    underline: Container(height: 1, color: Colors.white24),
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedCedula = newValue;
-                      });
-                      _load();
-                    },
-                    items: [
-                      const DropdownMenuItem<String>(
-                        value: null,
-                        child: Text('Todos los empleados'),
+                // Selector de Mes
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  color: const Color(0xFF111328),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                              icon: const Icon(Icons.arrow_back_ios,
+                                  color: Color(0xFFE0A96D)),
+                              onPressed: () => _changeMonth(-1)),
+                          Text('Mes: $mesActual',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          IconButton(
+                              icon: const Icon(Icons.arrow_forward_ios,
+                                  color: Color(0xFFE0A96D)),
+                              onPressed: () => _changeMonth(1)),
+                        ],
                       ),
-                      ..._empleados.map<DropdownMenuItem<String>>((emp) {
-                        return DropdownMenuItem<String>(
-                          value: emp['cedula'].toString(),
-                          child: Text('${emp['nombre']} - ${emp['cedula']}'),
-                        );
-                      }).toList(),
+                      if (_empleados.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        DropdownButton<String>(
+                          isExpanded: true,
+                          dropdownColor: const Color(0xFF1D1E33),
+                          value: _selectedCedula,
+                          hint: const Text('Todos los empleados',
+                              style: TextStyle(color: Colors.white54)),
+                          icon: const Icon(Icons.person,
+                              color: Color(0xFFE0A96D)),
+                          underline:
+                              Container(height: 1, color: Colors.white24),
+                          style: const TextStyle(color: Colors.white),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedCedula = newValue;
+                            });
+                            _load();
+                          },
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('Todos los empleados'),
+                            ),
+                            ..._empleados.map<DropdownMenuItem<String>>((emp) {
+                              return DropdownMenuItem<String>(
+                                value: emp['cedula'].toString(),
+                                child:
+                                    Text('${emp['nombre']} - ${emp['cedula']}'),
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                ],
+                ),
+                Expanded(
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _resumen.isEmpty
+                          ? const Center(
+                              child: Text('No hay registros en este mes.',
+                                  style: TextStyle(color: Colors.white70)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              itemCount: _resumen.length,
+                              itemBuilder: (context, index) {
+                                final item = _resumen[index];
+                                final double horasT = double.tryParse(
+                                        item['horas']?.toString() ?? '0') ??
+                                    0;
+                                final int totalDinero = int.tryParse(
+                                        item['total']?.toString() ?? '0') ??
+                                    0;
+                                final double semanas = horasT / 42.0;
+
+                                return Card(
+                                  color: const Color(0xFF1D1E33),
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: const BorderSide(
+                                          color: Colors.white10)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('${item['nombre']}',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                                fontSize: 18)),
+                                        const SizedBox(height: 4),
+                                        Text('C.C: ${item['cedula']}',
+                                            style: const TextStyle(
+                                                color: Colors.white70)),
+                                        const Divider(
+                                            color: Colors.white24, height: 24),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Turnos completados:',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text('${item['turnos']}',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Horas trabajadas:',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                '${horasT.toStringAsFixed(2)} h',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        const Divider(
+                                            color: Colors.white24, height: 24),
+                                        if (_modoCalculo == 1) ...[
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                  'Total a pagar (Aprox):',
+                                                  style: TextStyle(
+                                                      color: Color(0xFFE0A96D),
+                                                      fontSize: 16)),
+                                              Text('\$$totalDinero',
+                                                  style: const TextStyle(
+                                                      color: Color(0xFFE0A96D),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18)),
+                                            ],
+                                          ),
+                                        ] else ...[
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                  'Semanas trabajadas (42h):',
+                                                  style: TextStyle(
+                                                      color: Color(0xFFE0A96D),
+                                                      fontSize: 16)),
+                                              Text(
+                                                  '${semanas.toStringAsFixed(2)} Semanas',
+                                                  style: const TextStyle(
+                                                      color: Color(0xFFE0A96D),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18)),
+                                            ],
+                                          ),
+                                        ]
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
               ],
             ),
           ),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _resumen.isEmpty
-                    ? const Center(child: Text('No hay registros en este mes.', style: TextStyle(color: Colors.white70)))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _resumen.length,
-                        itemBuilder: (context, index) {
-                          final item = _resumen[index];
-                          final double horasT = double.tryParse(item['horas']?.toString() ?? '0') ?? 0;
-                          final int totalDinero = int.tryParse(item['total']?.toString() ?? '0') ?? 0;
-                          final double semanas = horasT / 42.0;
-
-                          return Card(
-                            color: const Color(0xFF1D1E33),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.white10)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('${item['nombre']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
-                                  const SizedBox(height: 4),
-                                  Text('C.C: ${item['cedula']}', style: const TextStyle(color: Colors.white70)),
-                                  const Divider(color: Colors.white24, height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Turnos completados:', style: TextStyle(color: Colors.white70)),
-                                      Text('${item['turnos']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Horas trabajadas:', style: TextStyle(color: Colors.white70)),
-                                      Text('${horasT.toStringAsFixed(2)} h', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  const Divider(color: Colors.white24, height: 24),
-                                  if (_modoCalculo == 1) ...[
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('Total a pagar (Aprox):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                        Text('\$$totalDinero', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
-                                      ],
-                                    ),
-                                  ] else ...[
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('Semanas trabajadas (42h):', style: TextStyle(color: Color(0xFFE0A96D), fontSize: 16)),
-                                        Text('${semanas.toStringAsFixed(2)} Semanas', style: const TextStyle(color: Color(0xFFE0A96D), fontWeight: FontWeight.bold, fontSize: 18)),
-                                      ],
-                                    ),
-                                  ]
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -207,16 +290,23 @@ class _SummaryScreenState extends State<SummaryScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF111328),
-        title: const Text('Borrar Mes Completo', style: TextStyle(color: Colors.white)),
-        content: Text('¿Estás seguro que deseas eliminar TODOS los registros de asistencia del mes $mesActual?\n\nEsta acción no se puede deshacer.', style: const TextStyle(color: Colors.white70)),
+        title: const Text('Borrar Mes Completo',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+            '¿Estás seguro que deseas eliminar TODOS los registros de asistencia del mes $mesActual?\n\nEsta acción no se puede deshacer.',
+            style: const TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Colors.white54))),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteHistoryMonth();
             },
-            child: const Text('Eliminar Todo', style: TextStyle(color: Colors.redAccent)),
+            child: const Text('Eliminar Todo',
+                style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -225,15 +315,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   Future<void> _deleteHistoryMonth() async {
     setState(() => _loading = true);
-    
+
     final startOfMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final endOfMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-    final desde = "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
-    final hasta = "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
+    final desde =
+        "${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01";
+    final hasta =
+        "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
 
     final res = await ApiService.deleteHistoryMonth(desde: desde, hasta: hasta);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Registros eliminados')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Registros eliminados')));
     }
     _load();
   }
