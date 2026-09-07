@@ -1,35 +1,24 @@
-# Configuración de despliegue para Netlify
 [build]
-  base = "backend"
-  publish = "public"
-  functions = "netlify/functions"
+  command = "bash build.sh"
+  publish = "app/build/web"
+  functions = "backend/netlify/functions"
 
-# Servir el panel principal en la raíz
-[[redirects]]
-  from = "/"
-  to = "/generar-qr.html"
-  status = 200
-
-# Redirección de todas las rutas de API hacia Netlify Function
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
 
-# Endpoint de generación de QR hacia Netlify Function
 [[redirects]]
   from = "/imprimir-qr"
   to = "/.netlify/functions/api/imprimir-qr"
   status = 200
 
-# Redirección de descarga de APK hacia el archivo estático
 [[redirects]]
   from = "/descargar-app"
-  to = "/app-release.apk"
+  to = "/public/app-release.apk"
   status = 200
 
-# Redirección para acceso con prefijo /public/ a los archivos estáticos
 [[redirects]]
-  from = "/public/*"
-  to = "/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
