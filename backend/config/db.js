@@ -1,9 +1,17 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+console.log('DATABASE_URL presente:', hasDatabaseUrl);
+console.log('Entorno:', process.env.NETLIFY ? 'Netlify' : 'otro');
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL no está configurada');
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/asistencia',
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 module.exports = {
