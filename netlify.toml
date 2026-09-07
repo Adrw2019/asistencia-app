@@ -4,6 +4,12 @@
   publish = "public"
   functions = "netlify/functions"
 
+# Servir el panel principal en la raíz
+[[redirects]]
+  from = "/"
+  to = "/generar-qr.html"
+  status = 200
+
 # Redirección de todas las rutas de API hacia Netlify Function
 [[redirects]]
   from = "/api/*"
