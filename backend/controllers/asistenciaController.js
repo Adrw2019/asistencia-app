@@ -15,6 +15,16 @@ function sendPushToEmpresa(empresaId, titulo, mensaje) {
   });
 }
 
+function guardarNotificacion({ empresa_id, empleado_id, tipo, titulo, mensaje, horas_trabajadas = null }) {
+  db.query(
+    'INSERT INTO notificaciones (empresa_id, empleado_id, tipo, titulo, mensaje, horas_trabajadas) VALUES (?, ?, ?, ?, ?, ?)',
+    [empresa_id, empleado_id || null, tipo, titulo, mensaje, horas_trabajadas],
+    (err) => {
+      if (err) console.error('Error al guardar notificación:', err.message);
+    }
+  );
+}
+
 function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
 function money(n) { return Math.round(Number(n) || 0); }
@@ -141,6 +151,13 @@ exports.scan = (req, res) => {
             [empresaId, empleado.id, cedula, fecha, hora],
             (insErr, result) => {
               if (insErr) return res.status(500).json({ success: false, message: insErr.message });
+              guardarNotificacion({
+                empresa_id: empresaId,
+                empleado_id: empleado.id,
+                tipo: 'entrada',
+                titulo: 'Nueva entrada',
+                mensaje: `${empleado.nombre} - Entrada: ${hora}`
+              });
               return res.json({ success: true, tipo: 'entrada', message: 'Entrada registrada', asistencia_id: result.insertId, empleado, fecha, hora_entrada: hora });
             }
           );
@@ -160,6 +177,13 @@ exports.scan = (req, res) => {
           db.query('UPDATE asistencias SET hora_salida=? WHERE id=? AND empresa_id=?', [abierta.hora_entrada, abierta.id, empresaId], () => {
             db.query('INSERT INTO asistencias (empresa_id, empleado_id, cedula, fecha, hora_entrada) VALUES (?,?,?,?,?) RETURNING id', [empresaId, empleado.id, cedula, fecha, hora], (insErr, result) => {
               if (insErr) return res.status(500).json({ success: false, message: insErr.message });
+              guardarNotificacion({
+                empresa_id: empresaId,
+                empleado_id: empleado.id,
+                tipo: 'entrada',
+                titulo: 'Nueva entrada',
+                mensaje: `${empleado.nombre} - Entrada: ${hora}`
+              });
               return res.json({ success: true, tipo: 'entrada', message: 'Entrada registrada (Turno anterior cerrado por olvido)', asistencia_id: result.insertId, empleado, fecha, hora_entrada: hora });
             });
           });
@@ -183,6 +207,14 @@ exports.scan = (req, res) => {
               [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresaId],
               (upErr) => {
                 if (upErr) return res.status(500).json({ success: false, message: upErr.message });
+                guardarNotificacion({
+                  empresa_id: empresaId,
+                  empleado_id: empleado.id,
+                  tipo: 'salida',
+                  titulo: 'Nueva salida',
+                  mensaje: `${empleado.nombre} - Salida: ${hora} - Horas trabajadas: ${calc.horas_trabajadas} h`,
+                  horas_trabajadas: calc.horas_trabajadas
+                });
                 return res.json({ success: true, tipo: 'salida', message: 'Salida registrada', asistencia_id: abierta.id, empleado, fecha: dateStr, hora_entrada: abierta.hora_entrada, hora_salida: hora, calculos: calc });
               }
             );
@@ -293,6 +325,15 @@ exports.webScan = (req, res) => {
               (insErr, result) => {
                 if (insErr) return res.status(500).json({ success: false, message: insErr.message });
                 
+                // Guardar en tabla notificaciones
+                guardarNotificacion({
+                  empresa_id,
+                  empleado_id: emp.id,
+                  tipo: 'entrada',
+                  titulo: 'Nueva entrada',
+                  mensaje: `${emp.nombre} - Entrada: ${hora}`
+                });
+
                 // EMITIR NOTIFICACION POR SOCKET
                 const titulo = '¡Nueva Entrada!';
                 const mensaje = `${emp.nombre} (C.C ${cedula}) ingresó a las ${hora}`;
@@ -344,6 +385,16 @@ exports.webScan = (req, res) => {
                     (upErr) => {
                       if (upErr) return res.status(500).json({ success: false, message: 'DB Error: ' + upErr.message });
                       
+                      // Guardar en tabla notificaciones
+                      guardarNotificacion({
+                        empresa_id,
+                        empleado_id: emp.id,
+                        tipo: 'salida',
+                        titulo: 'Nueva salida',
+                        mensaje: `${emp.nombre} - Salida: ${hora} - Horas trabajadas: ${calc.horas_trabajadas} h`,
+                        horas_trabajadas: calc.horas_trabajadas
+                      });
+
                       // EMITIR NOTIFICACION POR SOCKET
                       const titulo = '¡Nueva Salida!';
                       const mensaje = `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`;

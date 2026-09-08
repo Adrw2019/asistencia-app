@@ -184,6 +184,42 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getNotificacionesNoLeidasCount() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/notificaciones/no-leidas'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'count': 0, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getNotificaciones() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/notificaciones'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'data': [], 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> marcarNotificacionLeida(int id) async {
+    try {
+      final response = await http.patch(Uri.parse('$baseUrl/notificaciones/$id/leida'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> marcarTodasNotificacionesLeidas() async {
+    try {
+      final response = await http.patch(Uri.parse('$baseUrl/notificaciones/marcar-todas'), headers: await _headers());
+      return _decode(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
   static Map<String, dynamic> _decode(http.Response response) {
     try {
       final data = jsonDecode(response.body);

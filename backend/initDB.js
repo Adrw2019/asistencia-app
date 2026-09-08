@@ -67,6 +67,18 @@ const initDB = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE (empresa_id, username)
     );
+
+    CREATE TABLE IF NOT EXISTS notificaciones (
+      id SERIAL PRIMARY KEY,
+      empresa_id INTEGER NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
+      empleado_id INTEGER REFERENCES empleados(id) ON DELETE SET NULL,
+      tipo VARCHAR(20) NOT NULL,
+      titulo VARCHAR(150) NOT NULL,
+      mensaje TEXT NOT NULL,
+      horas_trabajadas DECIMAL(10,2) DEFAULT NULL,
+      leida SMALLINT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `;
 
   try {
@@ -76,7 +88,7 @@ const initDB = async () => {
         else resolve(res);
       });
     });
-    
+
     // Migraciones de esquema seguras. IF NOT EXISTS evita errores y conserva los datos existentes.
     try {
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS hora_entrada_esperada TIME DEFAULT '08:00:00'", [], r));
@@ -90,12 +102,15 @@ const initDB = async () => {
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS latitud DECIMAL(10,8)", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS longitud DECIMAL(11,8)", [], r));
       await new Promise(r => db.query("ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS horas_nocturnas DECIMAL(10,2) DEFAULT 0.00", [], r));
-    } catch(e) {
+      await new Promise(r => db.query("CREATE TABLE IF NOT EXISTS notificaciones (id SERIAL PRIMARY KEY, empresa_id INTEGER NOT NULL REFERENCES empresas(id) ON DELETE CASCADE, empleado_id INTEGER REFERENCES empleados(id) ON DELETE SET NULL, tipo VARCHAR(20) NOT NULL, titulo VARCHAR(150) NOT NULL, mensaje TEXT NOT NULL, horas_trabajadas DECIMAL(10,2) DEFAULT NULL, leida SMALLINT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)", [], r));
+      await new Promise(r => db.query("CREATE INDEX IF NOT EXISTS idx_notif_empresa_leida ON notificaciones (empresa_id, leida)", [], r));
+      await new Promise(r => db.query("CREATE INDEX IF NOT EXISTS idx_notif_empresa_fecha ON notificaciones (empresa_id, created_at DESC)", [], r));
+    } catch (e) {
       console.error('Error ejecutando migraciones seguras:', e);
     }
 
     console.log('Base de datos Postgres inicializada correctamente.');
-    
+
     // No se limpian datos de empleados ni asistencias durante el arranque.
   } catch (error) {
     console.error('Error inicializando BD:', error);

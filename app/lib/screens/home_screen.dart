@@ -10,6 +10,7 @@ import 'login_screen.dart';
 import 'config_screen.dart';
 import 'history_screen.dart';
 import 'summary_screen.dart';
+import '../widgets/notifications_bell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -236,6 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(
                 fontWeight: FontWeight.bold, color: Color(0xFFE0A96D))),
         actions: [
+          const NotificationsBell(),
           IconButton(
               icon: const Icon(Icons.logout, color: Colors.white70),
               onPressed: _logout),
