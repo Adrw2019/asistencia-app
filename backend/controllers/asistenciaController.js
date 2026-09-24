@@ -301,8 +301,8 @@ exports.scan = (req, res) => {
               const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, null, empleado.turno);
               
               db.query(
-                `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
-                [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresaId],
+                `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, horas_recargo=?, valor_recargo=?, valor_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
+                [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.horas_recargo, calc.valor_recargo, calc.valor_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresaId],
                 (upErr) => {
                   if (upErr) return res.status(500).json({ success: false, message: upErr.message });
                   const titulo = 'Salida registrada';
@@ -338,7 +338,7 @@ exports.resumen = (req, res) => {
   const empresaId = req.user.empresa_id;
   const { desde, hasta } = req.query;
   const params = [empresaId];
-  let sql = `SELECT e.cedula,e.nombre,COUNT(a.id) turnos,SUM(a.horas_trabajadas) horas,SUM(a.horas_extra) extras,SUM(a.horas_nocturnas) nocturnas,SUM(a.descuento) descuentos,SUM(a.pago) total FROM asistencias a INNER JOIN empleados e ON e.id=a.empleado_id WHERE a.empresa_id=? AND a.hora_salida IS NOT NULL`;
+  let sql = `SELECT e.cedula,e.nombre,COUNT(a.id) turnos,SUM(a.horas_trabajadas) horas,SUM(a.horas_extra) extras,SUM(a.horas_nocturnas) nocturnas,COALESCE(SUM(a.horas_recargo), 0) recargos,COALESCE(SUM(a.valor_recargo), 0) valor_recargos,COALESCE(SUM(a.valor_extra), 0) valor_extras,SUM(a.descuento) descuentos,SUM(a.pago) total FROM asistencias a INNER JOIN empleados e ON e.id=a.empleado_id WHERE a.empresa_id=? AND a.hora_salida IS NOT NULL`;
   if (desde) { sql += ' AND a.fecha>=?'; params.push(desde); }
   if (hasta) { sql += ' AND a.fecha<=?'; params.push(hasta); }
   sql += ' GROUP BY e.id,e.cedula,e.nombre ORDER BY e.nombre';
@@ -482,8 +482,8 @@ exports.webScan = (req, res) => {
                     const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config, emp.turno);
                     
                     db.query(
-                      `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
-                      [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
+                      `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, horas_recargo=?, valor_recargo=?, valor_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
+                      [hora, calc.pago, calc.horas_trabajadas, calc.horas_extra, calc.horas_nocturnas, calc.horas_recargo, calc.valor_recargo, calc.valor_extra, calc.descuento, calc.llego_tarde, calc.minutos_tarde, calc.minutos_salida_anticipada, abierta.id, empresa_id],
                       (upErr) => {
                         if (upErr) return res.status(500).json({ success: false, message: 'DB Error: ' + upErr.message });
                         

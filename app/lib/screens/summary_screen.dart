@@ -171,6 +171,21 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                 final double horasT = double.tryParse(
                                         item['horas']?.toString() ?? '0') ??
                                     0;
+                                final double horasRecargo = double.tryParse(
+                                        item['recargos']?.toString() ?? '0') ??
+                                    0;
+                                final int valorRecargo = int.tryParse(
+                                        item['valor_recargos']?.toString() ?? '0') ??
+                                    0;
+                                final double horasExtra = double.tryParse(
+                                        item['extras']?.toString() ?? '0') ??
+                                    0;
+                                final int valorExtra = int.tryParse(
+                                        item['valor_extras']?.toString() ?? '0') ??
+                                    0;
+                                final double horasNocturnas = double.tryParse(
+                                        item['nocturnas']?.toString() ?? '0') ??
+                                    0;
                                 final int totalDinero = int.tryParse(
                                         item['total']?.toString() ?? '0') ??
                                     0;
@@ -224,6 +239,88 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                                     color: Colors.white70)),
                                             Text(
                                                 '${horasT.toStringAsFixed(2)} h',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Horas de recargo:',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                '${horasRecargo.toStringAsFixed(2)} h',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        if (_modoCalculo == 1) ...[
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text('Valor recargos:',
+                                                  style: TextStyle(
+                                                      color: Colors.white70)),
+                                              Text('\$$valorRecargo',
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ],
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Horas extra:',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                '${horasExtra.toStringAsFixed(2)} h',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        if (_modoCalculo == 1) ...[
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text('Valor horas extra:',
+                                                  style: TextStyle(
+                                                      color: Colors.white70)),
+                                              Text('\$$valorExtra',
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ],
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Horas nocturnas:',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                '${horasNocturnas.toStringAsFixed(2)} h',
                                                 style: const TextStyle(
                                                     color: Colors.white,
                                                     fontWeight:

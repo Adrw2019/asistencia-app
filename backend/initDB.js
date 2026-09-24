@@ -42,6 +42,9 @@ const initDB = async () => {
       horas_trabajadas DECIMAL(10,2) DEFAULT 0.00,
       horas_extra DECIMAL(10,2) DEFAULT 0.00,
       horas_nocturnas DECIMAL(10,2) DEFAULT 0.00,
+      horas_recargo DECIMAL(10,2) DEFAULT 0.00,
+      valor_recargo INTEGER DEFAULT 0,
+      valor_extra INTEGER DEFAULT 0,
       descuento INTEGER DEFAULT 0,
       llego_tarde SMALLINT DEFAULT 0,
       minutos_tarde INTEGER DEFAULT 0,
@@ -102,6 +105,9 @@ const initDB = async () => {
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS latitud DECIMAL(10,8)", [], r));
       await new Promise(r => db.query("ALTER TABLE empresas ADD COLUMN IF NOT EXISTS longitud DECIMAL(11,8)", [], r));
       await new Promise(r => db.query("ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS horas_nocturnas DECIMAL(10,2) DEFAULT 0.00", [], r));
+      await new Promise(r => db.query("ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS horas_recargo DECIMAL(10,2) DEFAULT 0.00", [], r));
+      await new Promise(r => db.query("ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS valor_recargo INTEGER DEFAULT 0", [], r));
+      await new Promise(r => db.query("ALTER TABLE asistencias ADD COLUMN IF NOT EXISTS valor_extra INTEGER DEFAULT 0", [], r));
       await new Promise(r => db.query("CREATE TABLE IF NOT EXISTS notificaciones (id SERIAL PRIMARY KEY, empresa_id INTEGER NOT NULL REFERENCES empresas(id) ON DELETE CASCADE, empleado_id INTEGER REFERENCES empleados(id) ON DELETE SET NULL, tipo VARCHAR(20) NOT NULL, titulo VARCHAR(150) NOT NULL, mensaje TEXT NOT NULL, horas_trabajadas DECIMAL(10,2) DEFAULT NULL, leida SMALLINT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)", [], r));
       await new Promise(r => db.query("CREATE INDEX IF NOT EXISTS idx_notif_empresa_leida ON notificaciones (empresa_id, leida)", [], r));
       await new Promise(r => db.query("CREATE INDEX IF NOT EXISTS idx_notif_empresa_fecha ON notificaciones (empresa_id, created_at DESC)", [], r));
