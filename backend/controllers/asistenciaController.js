@@ -73,27 +73,26 @@ function formatFechaSql(fechaVal) {
   return str;
 }
 
-function calcularHorasNocturnas(entradaDt, salidaDt) {
-  let nocturnasMs = 0;
-  let currentDt = new Date(entradaDt.getTime());
-  while (currentDt < salidaDt) {
+function getOverlapHours(startDt, endDt, blockStartMins, blockEndMins) {
+  let overlapMs = 0;
+  let currentDt = new Date(startDt.getTime());
+  while (currentDt < endDt) {
     const h = currentDt.getHours();
     const m = currentDt.getMinutes();
-    const mins = h * 60 + m; // Minutos transcurridos en el día (0..1439)
-    // Horario nocturno: ÚNICAMENTE desde las 19:30 (1170 min) hasta las 23:00 (1380 min)
-    const isNocturno = (mins >= 1170 && mins < 1380);
+    const mins = h * 60 + m;
+    const inBlock = (mins >= blockStartMins && mins < blockEndMins);
     
     const s = currentDt.getSeconds();
     const ms = currentDt.getMilliseconds();
     const remainingInMinute = 60000 - (s * 1000 + ms);
-    const step = Math.min(remainingInMinute, salidaDt.getTime() - currentDt.getTime());
+    const step = Math.min(remainingInMinute, endDt.getTime() - currentDt.getTime());
     
-    if (isNocturno) {
-      nocturnasMs += step;
+    if (inBlock) {
+      overlapMs += step;
     }
     currentDt = new Date(currentDt.getTime() + step);
   }
-  return nocturnasMs / 3600000;
+  return overlapMs / 3600000;
 }
 
 function checkDebounce(empresaId, empleadoId, nowDt, callback) {
@@ -173,7 +172,17 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr
   const recargoExtra = 1.5;
 
   const horasTrabajadas = hoursBetween(entradaDt, salidaDt);
-  const horasNocturnas = calcularHorasNocturnas(entradaDt, salidaDt);
+
+  const r1 = getOverlapHours(entradaDt, salidaDt, 360, 480);
+  const r2 = getOverlapHours(entradaDt, salidaDt, 1200, 1260);
+  let horasRecargo = r1 + r2;
+  let horasExtra = getOverlapHours(entradaDt, salidaDt, 1260, 1320);
+  const horasNocturnas = getOverlapHours(entradaDt, salidaDt, 1320, 1380);
+
+  if (!pagaExtras) {
+    horasRecargo = 0;
+    horasExtra = 0;
+  }
   
   let minutosTarde = 0;
   let minutosSalidaAnticipada = 0;
@@ -184,19 +193,18 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr
     minutosSalidaAnticipada = salidaDt < finNormal ? Math.round((finNormal - salidaDt) / 60000) : 0;
   }
   
-  const extraAntes = entradaDt < inicioNormal ? hoursBetween(entradaDt, inicioNormal) : 0;
-  const extraDespues = salidaDt > finNormal ? hoursBetween(finNormal, salidaDt) : 0;
-  const horasExtra = pagaExtras ? (extraAntes + extraDespues) : 0;
-
   // Descuento solo si la empresa lo tiene activado
   let descuento = 0;
   if (descuentaTarde) {
     descuento = money(((minutosTarde + minutosSalidaAnticipada) / 60) * valorHora);
   }
 
+  const valorRecargoTotal = horasRecargo * 2700;
+  const valorExtraTotal = horasExtra * 14000;
+
   // Pago base hasta el valor del día, menos descuentos
   const pagoBase = Math.max(0, valorDia - descuento);
-  const pagoExtras = horasExtra * valorHora * recargoExtra;
+  const pagoExtras = valorRecargoTotal + valorExtraTotal;
   let pago = money(pagoBase + pagoExtras);
   
   if (config?.modo_calculo === 2) {
@@ -208,6 +216,9 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr
     horas_trabajadas: Number(horasTrabajadas.toFixed(2)),
     horas_extra: Number(horasExtra.toFixed(2)),
     horas_nocturnas: Number(horasNocturnas.toFixed(2)),
+    horas_recargo: Number(horasRecargo.toFixed(2)),
+    valor_recargo: valorRecargoTotal,
+    valor_extra: valorExtraTotal,
     descuento,
     pago,
     llego_tarde: minutosTarde > 0 ? 1 : 0,
