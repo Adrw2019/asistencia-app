@@ -73,6 +73,22 @@ CREATE TABLE fcm_tokens (
   CONSTRAINT fk_fcm_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS notificaciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  empresa_id INT NOT NULL,
+  empleado_id INT NULL,
+  tipo VARCHAR(20) NOT NULL,
+  titulo VARCHAR(150) NOT NULL,
+  mensaje TEXT NOT NULL,
+  horas_trabajadas DECIMAL(10,2) DEFAULT NULL,
+  leida TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_notif_empresa_leida (empresa_id, leida),
+  INDEX idx_notif_empresa_fecha (empresa_id, created_at),
+  CONSTRAINT fk_notificaciones_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notificaciones_empleado FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO empresas (id, nombre, nit, telefono, correo)
 VALUES (1, 'Empresa Principal', '000000000', '3005279465', 'andrw6382@gmail.com');
 

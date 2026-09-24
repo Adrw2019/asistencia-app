@@ -37,6 +37,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/employees', require('./routes/employeeRoutes'));
 app.use('/api/asistencias', require('./routes/asistenciaRoutes'));
 app.use('/api/empresas', require('./routes/empresaRoutes'));
+app.use('/api/notificaciones', require('./routes/notificacionRoutes'));
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
