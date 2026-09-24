@@ -32,11 +32,66 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _setupFCM() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission();
-    String? token = await messaging.getToken();
-    if (token != null) {
-      await ApiService.updateFCMToken(token);
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        String? token = await messaging.getToken();
+        if (token != null) {
+          await ApiService.updateFCMToken(token);
+        }
+      }
+
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        if (message.notification != null) {
+          if (!mounted) return;
+          final title = message.notification!.title ?? 'Asistencia';
+          final body = message.notification!.body ?? '';
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: const Color(0xFF1D1E33),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFE0A96D), width: 1),
+              ),
+              duration: const Duration(seconds: 5),
+              content: Row(
+                children: [
+                  const Icon(Icons.notifications_active,
+                      color: Color(0xFFE0A96D)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFE0A96D))),
+                        const SizedBox(height: 2),
+                        Text(body,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint("Error configurando FCM: $e");
     }
   }
 

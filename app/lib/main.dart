@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -8,24 +9,28 @@ import 'widgets/app_lock_wrapper.dart'; // Crearemos este wrapper de seguridad
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyCdftcgffAtHMpBoeIw2frkjyxR_Zuw6uU",
-      appId: "1:543127917229:android:3a734ce31cd08f28ccec24",
-      messagingSenderId: "543127917229",
-      projectId: "asistenciaapp-3ec4a",
-      storageBucket: "asistenciaapp-3ec4a.firebasestorage.app",
-    ),
-  );
-  NotificationService.showNotification(
-    title: message.notification?.title ?? 'Notificación',
-    body: message.notification?.body ?? '',
-  );
+  if (!kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyCdftcgffAtHMpBoeIw2frkjyxR_Zuw6uU",
+        appId: "1:543127917229:android:3a734ce31cd08f28ccec24",
+        messagingSenderId: "543127917229",
+        projectId: "asistenciaapp-3ec4a",
+        storageBucket: "asistenciaapp-3ec4a.firebasestorage.app",
+      ),
+    );
+    NotificationService.showNotification(
+      title: message.notification?.title ?? 'Notificación',
+      body: message.notification?.body ?? '',
+    );
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init();
+  if (!kIsWeb) {
+    await NotificationService.init();
+  }
   try {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -36,7 +41,9 @@ void main() async {
         storageBucket: "asistenciaapp-3ec4a.firebasestorage.app",
       ),
     );
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    }
   } catch (e) {
     debugPrint("Firebase init error: $e");
   }
