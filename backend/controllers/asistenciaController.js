@@ -45,6 +45,16 @@ function sendPushToEmpresa(empresaId, titulo, mensaje) {
   });
 }
 
+function guardarNotificacion({ empresa_id, empleado_id, tipo, titulo, mensaje, horas_trabajadas = null }) {
+  db.query(
+    'INSERT INTO notificaciones (empresa_id, empleado_id, tipo, titulo, mensaje, horas_trabajadas) VALUES (?, ?, ?, ?, ?, ?)',
+    [empresa_id, empleado_id || null, tipo, titulo, mensaje, horas_trabajadas],
+    (err) => {
+      if (err) console.error('Error guardando notificación:', err);
+    }
+  );
+}
+
 function toDate(fecha, hora) { return new Date(`${fecha}T${hora}`); }
 function hoursBetween(a, b) { return Math.max(0, (b - a) / 3600000); }
 function money(n) { return Math.round(Number(n) || 0); }
@@ -407,9 +417,30 @@ exports.webScan = (req, res) => {
                 (insErr, result) => {
                   if (insErr) return res.status(500).json({ success: false, message: insErr.message });
                   
+                  // Guardar en tabla notificaciones
+                  guardarNotificacion({
+                    empresa_id,
+                    empleado_id: emp.id,
+                    tipo: 'entrada',
+                    titulo: 'Nueva entrada',
+                    mensaje: `${emp.nombre} - Entrada: ${hora}`
+                  });
+
+                  const titulo = '¡Nueva Entrada!';
+                  const mensaje = `${emp.nombre} (C.C ${cedula}) ingresó a las ${hora}`;
+                  
+                  // EMITIR NOTIFICACION POR SOCKET
+                  if(req.io) {
+                    req.io.emit('nueva_asistencia', {
+                      empresa_id: Number(empresa_id),
+                      tipo: 'entrada',
+                      titulo: titulo,
+                      mensaje: mensaje,
+                      hora: hora
+                    });
+                  }
+
                   // EMITIR NOTIFICACION POR PUSH MULTICAST
-                  const titulo = 'Nueva entrada registrada';
-                  const mensaje = `${emp.nombre}\nEntrada: ${hora}`;
                   sendPushToEmpresa(empresa_id, titulo, mensaje);
                   
                   return res.json({ success: true, tipo: 'entrada', hora, advertencia });
@@ -445,9 +476,31 @@ exports.webScan = (req, res) => {
                       (upErr) => {
                         if (upErr) return res.status(500).json({ success: false, message: 'DB Error: ' + upErr.message });
                         
+                        // Guardar en tabla notificaciones
+                        guardarNotificacion({
+                          empresa_id,
+                          empleado_id: emp.id,
+                          tipo: 'salida',
+                          titulo: 'Nueva salida',
+                          mensaje: `${emp.nombre} - Salida: ${hora} - Horas trabajadas: ${calc.horas_trabajadas} h`,
+                          horas_trabajadas: calc.horas_trabajadas
+                        });
+
+                        const titulo = '¡Nueva Salida!';
+                        const mensaje = `${emp.nombre} (C.C ${cedula}) salió a las ${hora}`;
+
+                        // EMITIR NOTIFICACION POR SOCKET
+                        if(req.io) {
+                          req.io.emit('nueva_asistencia', {
+                            empresa_id: Number(empresa_id),
+                            tipo: 'salida',
+                            titulo: titulo,
+                            mensaje: mensaje,
+                            hora: hora
+                          });
+                        }
+
                         // EMITIR NOTIFICACION POR PUSH MULTICAST
-                        const titulo = 'Salida registrada';
-                        const mensaje = `${emp.nombre}\nSalida: ${hora}\nHoras trabajadas: ${calc.horas_trabajadas} h`;
                         sendPushToEmpresa(empresa_id, titulo, mensaje);
                         
                         return res.json({ success: true, tipo: 'salida', hora, calculos: calc });
