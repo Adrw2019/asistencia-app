@@ -199,8 +199,8 @@ function calcular(fecha, entrada, salida, esPrimerTurno = true, config, turnoStr
     descuento = money(((minutosTarde + minutosSalidaAnticipada) / 60) * valorHora);
   }
 
-  const valorRecargoTotal = horasRecargo * 2700;
-  const valorExtraTotal = horasExtra * 14000;
+  const valorRecargoTotal = money(horasRecargo * 2700);
+  const valorExtraTotal = money(horasExtra * 14000);
 
   // Pago base hasta el valor del día, menos descuentos
   const pagoBase = Math.max(0, valorDia - descuento);
@@ -233,7 +233,11 @@ exports.scan = (req, res) => {
   const { cedula } = req.body;
   if (!cedula) return res.status(400).json({ success: false, message: 'Falta cédula' });
 
-  db.query('SELECT * FROM empleados WHERE empresa_id = ? AND cedula = ? AND estado = 1 LIMIT 1', [empresaId, cedula], (err, empRows) => {
+  db.query('SELECT hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo, requiere_gps, latitud, longitud FROM empresas WHERE id = ?', [empresaId], (errConf, confRows) => {
+    if (errConf) return res.status(500).json({ success: false, message: errConf.message });
+    const config = confRows.length ? confRows[0] : null;
+
+    db.query('SELECT * FROM empleados WHERE empresa_id = ? AND cedula = ? AND estado = 1 LIMIT 1', [empresaId, cedula], (err, empRows) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
     if (!empRows.length) return res.status(404).json({ success: false, message: 'Empleado no encontrado en esta empresa' });
     const empleado = empRows[0];
@@ -296,9 +300,7 @@ exports.scan = (req, res) => {
               
               const esPrimerTurno = cRows[0].count === 0;
               
-              // We need config here, but it's not fetched in this old route. 
-              // In webScan it is fetched. We assume webScan is the one used by the app.
-              const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, null, empleado.turno);
+              const calc = calcular(dateStr, abierta.hora_entrada, hora, esPrimerTurno, config, empleado.turno);
               
               db.query(
                 `UPDATE asistencias SET hora_salida=?, pago=?, horas_trabajadas=?, horas_extra=?, horas_nocturnas=?, horas_recargo=?, valor_recargo=?, valor_extra=?, descuento=?, llego_tarde=?, minutos_tarde=?, minutos_salida_anticipada=? WHERE id=? AND empresa_id=?`,
@@ -316,6 +318,7 @@ exports.scan = (req, res) => {
         }
       );
     });
+  });
   });
 };
 
