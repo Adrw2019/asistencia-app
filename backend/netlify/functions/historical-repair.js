@@ -760,6 +760,7 @@ exports.handler = async function (event, context) {
 
     return { statusCode: 400, body: JSON.stringify({ success: false, message: 'Invalid action' }) };
   } catch (err) {
+    console.error('[historical-repair]', err && err.message ? err.message : 'Unknown error');
     return { statusCode: 500, body: JSON.stringify({ success: false, message: err.message }) };
   }
 };
