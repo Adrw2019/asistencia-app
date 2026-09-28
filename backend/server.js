@@ -52,9 +52,14 @@ app.get('/imprimir-qr', async (req, res) => {
     const baseUrl = process.env.APP_URL || 'https://asistencia-app-92to.onrender.com';
     const url = `${baseUrl}/public/formulario.html?empresa=${empresaId}`;
     const qrImage = await QRCode.toBuffer(url, { width: 500, margin: 2 });
+    
+    const pngBuffer = Buffer.isBuffer(qrImage) ? qrImage : Buffer.from(qrImage);
+
+    res.status(200);
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Content-Disposition', 'attachment; filename="qr_empleados.png"');
-    res.send(qrImage);
+    res.setHeader('Content-Length', pngBuffer.length);
+    return res.end(pngBuffer);
   } catch (err) {
     res.status(500).send('Error generando QR');
   }
