@@ -316,7 +316,7 @@ async function executeSetup() {
         ix.indisunique,
         pg_get_expr(ix.indpred, ix.indrelid) as predicate,
         (
-          SELECT array_agg(a.attname ORDER BY x.ord)
+          SELECT string_agg(a.attname, ',' ORDER BY x.ord)
           FROM unnest(ix.indkey) WITH ORDINALITY x(attnum, ord)
           JOIN pg_attribute a ON a.attnum = x.attnum AND a.attrelid = ix.indrelid
         ) as columns
@@ -334,7 +334,7 @@ async function executeSetup() {
     const idxDef = idxRes.rows[0];
     if (idxDef.indisunique !== true) throw new Error('idx_unica_reparacion_exitosa no es UNIQUE');
     
-    const idxCols = (idxDef.columns || []).join(',');
+    const idxCols = String(idxDef.columns || '');
     if (idxCols !== 'empresa_id,anio,mes') {
       throw new Error(`Columnas del índice no coinciden estrictamente con (empresa_id, anio, mes). Encontrado: ${idxCols}`);
     }
