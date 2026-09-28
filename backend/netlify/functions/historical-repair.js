@@ -240,6 +240,129 @@ async function buildRepairPlan(queryFn, empresaId, year, month, config) {
 }
 
 // -------------------------------------------------------------------
+// Setup Implementation (Table Creation)
+// -------------------------------------------------------------------
+async function executeSetup() {
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    
+    const ddl = getMaintenanceTablesSQL();
+    await client.query(ddl);
+
+    // 1. Verificación de Tablas y Conteo Estricto
+    const countLog = await client.query('SELECT COUNT(*) as c FROM reparaciones_log');
+    const logVal = Number(countLog.rows[0].c);
+    if (!Number.isInteger(logVal) || logVal !== 0) throw new Error('reparaciones_log no está vacía o conteo inválido');
+
+    const countBackup = await client.query('SELECT COUNT(*) as c FROM asistencias_reparacion_backup');
+    const backupVal = Number(countBackup.rows[0].c);
+    if (!Number.isInteger(backupVal) || backupVal !== 0) throw new Error('asistencias_reparacion_backup no está vacía o conteo inválido');
+
+    // 2. Columnas obligatorias
+    const colsLogRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'reparaciones_log'`);
+    const colsLog = new Set(colsLogRes.rows.map(r => r.column_name));
+    const reqColsLog = ['backup_run_id', 'empresa_id', 'anio', 'mes', 'estado', 'creado_en', 'completado_en', 'restaurado_en'];
+    for (const c of reqColsLog) {
+      if (!colsLog.has(c)) throw new Error(`Falta columna obligatoria ${c} en reparaciones_log`);
+    }
+
+    const colsBackupRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'asistencias_reparacion_backup'`);
+    const colsBackup = new Set(colsBackupRes.rows.map(r => r.column_name));
+    const reqColsBackup = [
+      'backup_row_id', 'backup_run_id', 'asistencia_id', 'empresa_id', 'empleado_id', 'fecha', 'hora_entrada', 'hora_salida',
+      'horas_recargo_original', 'horas_extra_original', 'horas_nocturnas_original', 'valor_recargo_original', 'valor_extra_original', 'backup_at'
+    ];
+    for (const c of reqColsBackup) {
+      if (!colsBackup.has(c)) throw new Error(`Falta columna obligatoria ${c} en asistencias_reparacion_backup`);
+    }
+
+    // 3. Verificación Constraints Exactos (pg_constraint + pg_class + pg_namespace)
+    const consRes = await client.query(`
+      SELECT
+        n.nspname AS schema_name,
+        c.relname AS table_name,
+        pg_get_constraintdef(pc.oid) AS def
+      FROM pg_constraint pc
+      JOIN pg_class c ON c.oid = pc.conrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND c.relname IN ('reparaciones_log', 'asistencias_reparacion_backup')
+    `);
+    
+    const constraints = consRes.rows.map(r => ({ 
+      tbl: r.table_name, 
+      def: r.def.toUpperCase().replace(/\\s+/g, ' ') 
+    }));
+
+    const hasLogPk = constraints.some(c => c.tbl === 'reparaciones_log' && c.def.includes('PRIMARY KEY (BACKUP_RUN_ID)'));
+    if (!hasLogPk) throw new Error('Falta PRIMARY KEY (backup_run_id) en reparaciones_log');
+
+    const hasLogCheck = constraints.some(c => c.tbl === 'reparaciones_log' && c.def.includes('CHECK') && c.def.includes('PREPARADA') && c.def.includes('COMPLETADA') && c.def.includes('RESTAURADA') && c.def.includes('FALLIDA'));
+    if (!hasLogCheck) throw new Error('Falta CHECK restrictivo de estados en reparaciones_log');
+
+    const hasBackupPk = constraints.some(c => c.tbl === 'asistencias_reparacion_backup' && c.def.includes('PRIMARY KEY (BACKUP_ROW_ID)'));
+    if (!hasBackupPk) throw new Error('Falta PRIMARY KEY (backup_row_id) en asistencias_reparacion_backup');
+
+    const hasBackupFk = constraints.some(c => c.tbl === 'asistencias_reparacion_backup' && c.def.includes('FOREIGN KEY (BACKUP_RUN_ID) REFERENCES REPARACIONES_LOG(BACKUP_RUN_ID)'));
+    if (!hasBackupFk) throw new Error('Falta FOREIGN KEY exacta en asistencias_reparacion_backup');
+
+    const hasBackupUq = constraints.some(c => c.tbl === 'asistencias_reparacion_backup' && c.def.includes('UNIQUE (BACKUP_RUN_ID, ASISTENCIA_ID)'));
+    if (!hasBackupUq) throw new Error('Falta UNIQUE (backup_run_id, asistencia_id) en asistencias_reparacion_backup');
+
+    // 4. Verificación Robusta Índice Parcial (pg_index / pg_class / pg_attribute)
+    const idxRes = await client.query(`
+      SELECT 
+        ix.indisunique,
+        pg_get_expr(ix.indpred, ix.indrelid) as predicate,
+        (
+          SELECT array_agg(a.attname ORDER BY x.ord)
+          FROM unnest(ix.indkey) WITH ORDINALITY x(attnum, ord)
+          JOIN pg_attribute a ON a.attnum = x.attnum AND a.attrelid = ix.indrelid
+        ) as columns
+      FROM pg_index ix
+      JOIN pg_class i ON i.oid = ix.indexrelid
+      JOIN pg_class t ON t.oid = ix.indrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      WHERE n.nspname = 'public' 
+        AND t.relname = 'reparaciones_log' 
+        AND i.relname = 'idx_unica_reparacion_exitosa'
+    `);
+    
+    if (idxRes.rowCount === 0) throw new Error('Falta el índice idx_unica_reparacion_exitosa en public.reparaciones_log');
+
+    const idxDef = idxRes.rows[0];
+    if (idxDef.indisunique !== true) throw new Error('idx_unica_reparacion_exitosa no es UNIQUE');
+    
+    const idxCols = (idxDef.columns || []).join(',');
+    if (idxCols !== 'empresa_id,anio,mes') {
+      throw new Error(`Columnas del índice no coinciden estrictamente con (empresa_id, anio, mes). Encontrado: ${idxCols}`);
+    }
+
+    const predUpper = (idxDef.predicate || '').toUpperCase().replace(/\\s+/g, ' ').replace(/"/g, '');
+    if (!predUpper.includes('ESTADO') || !predUpper.includes('COMPLETADA')) {
+      throw new Error('Predicado de índice parcial (indpred) no refleja la restricción de COMPLETADA');
+    }
+
+    await client.query('COMMIT');
+    return {
+      success: true,
+      tables: {
+        reparaciones_log: { exists: true, rows: 0 },
+        asistencias_reparacion_backup: { exists: true, rows: 0 }
+      },
+      constraints_ok: true,
+      index_ok: true
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// -------------------------------------------------------------------
 // Repair Implementation (UNREACHABLE FROM HANDLER)
 // -------------------------------------------------------------------
 // eslint-disable-next-line no-unused-vars
@@ -620,6 +743,14 @@ exports.handler = async function (event, context) {
       delete plan.registros_a_cambiar.detalles_afectados;
 
       return { statusCode: 200, body: JSON.stringify({ success: true, preview: plan }) };
+    }
+
+    if (action === 'setup') {
+      if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: JSON.stringify({ success: false, message: 'Method Not Allowed' }) };
+      }
+      const setupRes = await executeSetup();
+      return { statusCode: 200, body: JSON.stringify(setupRes) };
     }
 
     // STRICTLY ENFORCED: REPAIR AND RESTORE ARE BLOCKED
