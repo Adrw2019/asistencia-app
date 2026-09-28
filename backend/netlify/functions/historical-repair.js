@@ -74,8 +74,8 @@ function getMaintenanceTablesSQL() {
       restaurado_en TIMESTAMP NULL
     );
 
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_unica_reparacion_exitosa 
-    ON reparaciones_log (empresa_id, anio, mes) 
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unica_reparacion_exitosa
+    ON reparaciones_log (empresa_id, anio, mes)
     WHERE estado = 'COMPLETADA';
 
     CREATE TABLE IF NOT EXISTS asistencias_reparacion_backup (
@@ -165,14 +165,14 @@ async function buildRepairPlan(queryFn, empresaId, year, month, config) {
       periodo_completo.requiere_revision++;
       continue;
     }
-    
+
     let calculadoRaw;
     try {
       calculadoRaw = _calcular(formattedFecha, r.hora_entrada, r.hora_salida, esPrimerTurno, config, r.turno);
     } catch(e) {
       periodo_completo.requiere_revision++;
-      continue; 
-    } 
+      continue;
+    }
 
     let calculated;
     try {
@@ -194,13 +194,13 @@ async function buildRepairPlan(queryFn, empresaId, year, month, config) {
       continue;
     }
 
-    const hasDifference = 
+    const hasDifference =
       Math.abs(actual.horas_recargo - calculated.horas_recargo) > tolerance ||
       Math.abs(actual.horas_extra - calculated.horas_extra) > tolerance ||
       Math.abs(actual.horas_nocturnas - calculated.horas_nocturnas) > tolerance ||
       actual.valor_recargo !== calculated.valor_recargo ||
       actual.valor_extra !== calculated.valor_extra;
-    
+
     periodo_completo.totales_antes.horas_recargo += actual.horas_recargo;
     periodo_completo.totales_antes.horas_extra += actual.horas_extra;
     periodo_completo.totales_antes.horas_nocturnas += actual.horas_nocturnas;
@@ -215,17 +215,17 @@ async function buildRepairPlan(queryFn, empresaId, year, month, config) {
 
     if (hasDifference) {
       periodo_completo.registros_a_cambiar++;
-      
+
       registros_a_cambiar.cantidad_afectados++;
       registros_a_cambiar.ids_afectados.push(r.asistencia_id);
       registros_a_cambiar.detalles_afectados.push({ originalRow: r, actual, calculated });
-      
+
       registros_a_cambiar.totales_afectados_antes.horas_recargo += actual.horas_recargo;
       registros_a_cambiar.totales_afectados_antes.horas_extra += actual.horas_extra;
       registros_a_cambiar.totales_afectados_antes.horas_nocturnas += actual.horas_nocturnas;
       registros_a_cambiar.totales_afectados_antes.valor_recargo += actual.valor_recargo;
       registros_a_cambiar.totales_afectados_antes.valor_extra += actual.valor_extra;
-      
+
       registros_a_cambiar.totales_afectados_despues.horas_recargo += calculated.horas_recargo;
       registros_a_cambiar.totales_afectados_despues.horas_extra += calculated.horas_extra;
       registros_a_cambiar.totales_afectados_despues.horas_nocturnas += calculated.horas_nocturnas;
@@ -246,7 +246,7 @@ async function executeSetup() {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    
+
     const ddl = getMaintenanceTablesSQL();
     await client.query(ddl);
 
@@ -289,10 +289,10 @@ async function executeSetup() {
       WHERE n.nspname = 'public'
         AND c.relname IN ('reparaciones_log', 'asistencias_reparacion_backup')
     `);
-    
-    const constraints = consRes.rows.map(r => ({ 
-      tbl: r.table_name, 
-      def: r.def.toUpperCase().replace(/\\s+/g, ' ') 
+
+    const constraints = consRes.rows.map(r => ({
+      tbl: r.table_name,
+      def: r.def.toUpperCase().replace(/\\s+/g, ' ')
     }));
 
     const hasLogPk = constraints.some(c => c.tbl === 'reparaciones_log' && c.def.includes('PRIMARY KEY (BACKUP_RUN_ID)'));
@@ -312,7 +312,7 @@ async function executeSetup() {
 
     // 4. Verificación Robusta Índice Parcial (pg_index / pg_class / pg_attribute)
     const idxRes = await client.query(`
-      SELECT 
+      SELECT
         ix.indisunique,
         pg_get_expr(ix.indpred, ix.indrelid) as predicate,
         (
@@ -324,16 +324,16 @@ async function executeSetup() {
       JOIN pg_class i ON i.oid = ix.indexrelid
       JOIN pg_class t ON t.oid = ix.indrelid
       JOIN pg_namespace n ON n.oid = t.relnamespace
-      WHERE n.nspname = 'public' 
-        AND t.relname = 'reparaciones_log' 
+      WHERE n.nspname = 'public'
+        AND t.relname = 'reparaciones_log'
         AND i.relname = 'idx_unica_reparacion_exitosa'
     `);
-    
+
     if (idxRes.rowCount === 0) throw new Error('Falta el índice idx_unica_reparacion_exitosa en public.reparaciones_log');
 
     const idxDef = idxRes.rows[0];
     if (idxDef.indisunique !== true) throw new Error('idx_unica_reparacion_exitosa no es UNIQUE');
-    
+
     const idxCols = String(idxDef.columns || '');
     if (idxCols !== 'empresa_id,anio,mes') {
       throw new Error(`Columnas del índice no coinciden estrictamente con (empresa_id, anio, mes). Encontrado: ${idxCols}`);
@@ -370,7 +370,7 @@ async function executeRepair(empresaId, year, month, config) {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    
+
     // 1. Advisory Lock
     const lockKey = `historical-repair:${empresaId}:${year}:${month}`;
     await client.query('SELECT pg_advisory_xact_lock(hashtext(?))', [lockKey]);
@@ -379,7 +379,7 @@ async function executeRepair(empresaId, year, month, config) {
     const checkLog = await client.query(`SELECT 1 FROM reparaciones_log WHERE empresa_id=? AND anio=? AND mes=? AND estado='COMPLETADA'`, [empresaId, year, month]);
     if (checkLog.rowCount > 0) throw new Error('Ya existe una reparación completada para este período.');
 
-    // 4. Construir plan 
+    // 4. Construir plan
     const queryFn = (sql, p) => client.query(sql, p).then(res => res.rows);
     const plan = await buildRepairPlan(queryFn, empresaId, year, month, config);
 
@@ -401,13 +401,13 @@ async function executeRepair(empresaId, year, month, config) {
 
     // 9. FOR UPDATE
     const lockedRowsRes = await client.query(
-      `SELECT id, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra 
+      `SELECT id, empleado_id, fecha, hora_entrada, hora_salida, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra
        FROM asistencias WHERE id = ANY(?::int[]) AND empresa_id=? FOR UPDATE`,
       [affectedIds, empresaId]
     );
 
     if (lockedRowsRes.rowCount !== affectedIds.length) throw new Error('No se pudieron bloquear todos los registros esperados (cantidad incorrecta).');
-    
+
     const lockedIds = new Set(lockedRowsRes.rows.map(r => parseInt(r.id, 10)));
     for (const id of affectedIds) {
       if (!lockedIds.has(parseInt(id, 10))) throw new Error(`Registro ${id} no encontrado en el conjunto bloqueado.`);
@@ -418,13 +418,22 @@ async function executeRepair(empresaId, year, month, config) {
       const vr = parseSafeNumeric(lr.valor_recargo, 'vr');
       const ve = parseSafeNumeric(lr.valor_extra, 've');
       if (!Number.isInteger(vr) || !Number.isInteger(ve)) throw new Error(`Dinero no es entero en BD: ${lr.id}`);
-      
+
       lockedMap[lr.id] = {
+        empleado_id: lr.empleado_id,
+        fecha: lr.fecha,
+        hora_entrada: lr.hora_entrada,
+        hora_salida: lr.hora_salida,
         horas_recargo: parseSafeNumeric(lr.horas_recargo, 'hr'),
         horas_extra: parseSafeNumeric(lr.horas_extra, 'he'),
         horas_nocturnas: parseSafeNumeric(lr.horas_nocturnas, 'hn'),
         valor_recargo: vr,
-        valor_extra: ve
+        valor_extra: ve,
+        raw_horas_recargo: lr.horas_recargo,
+        raw_horas_extra: lr.horas_extra,
+        raw_horas_nocturnas: lr.horas_nocturnas,
+        raw_valor_recargo: lr.valor_recargo,
+        raw_valor_extra: lr.valor_extra
       };
     }
 
@@ -432,7 +441,7 @@ async function executeRepair(empresaId, year, month, config) {
     for (const d of plan.registros_a_cambiar.detalles_afectados) {
       const lr = lockedMap[d.originalRow.asistencia_id];
       if (!lr) throw new Error(`Registro ${d.originalRow.asistencia_id} no bloqueado.`);
-      
+
       const diffHr = Math.abs(lr.horas_recargo - d.actual.horas_recargo);
       const diffHe = Math.abs(lr.horas_extra - d.actual.horas_extra);
       const diffHn = Math.abs(lr.horas_nocturnas - d.actual.horas_nocturnas);
@@ -448,21 +457,25 @@ async function executeRepair(empresaId, year, month, config) {
     let backupInserted = 0;
     for (const d of plan.registros_a_cambiar.detalles_afectados) {
       const row = d.originalRow;
+      const lr = lockedMap[row.asistencia_id];
+      const calc = d.calculated;
       // Guardar el valor exacto de la base de datos (incluso si es NULL) para el backup
       const resBackup = await client.query(`
-        INSERT INTO asistencias_reparacion_backup 
-        (backup_run_id, asistencia_id, empresa_id, empleado_id, fecha, hora_entrada, hora_salida, 
-         horas_recargo_original, horas_extra_original, horas_nocturnas_original, valor_recargo_original, valor_extra_original) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO asistencias_reparacion_backup
+        (backup_run_id, asistencia_id, empresa_id, empleado_id, fecha, hora_entrada, hora_salida,
+         horas_recargo_original, horas_extra_original, horas_nocturnas_original, valor_recargo_original, valor_extra_original,
+         horas_recargo_reparada, horas_extra_reparada, horas_nocturnas_reparada, valor_recargo_reparado, valor_extra_reparado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        runId, row.asistencia_id, empresaId, row.empleado_id, formatFechaSql(row.fecha), row.hora_entrada, row.hora_salida,
-        row.horas_recargo, row.horas_extra, row.horas_nocturnas, row.valor_recargo, row.valor_extra
+        runId, row.asistencia_id, empresaId, lr.empleado_id, formatFechaSql(lr.fecha), lr.hora_entrada, lr.hora_salida,
+        lr.raw_horas_recargo, lr.raw_horas_extra, lr.raw_horas_nocturnas, lr.raw_valor_recargo, lr.raw_valor_extra,
+        calc.horas_recargo, calc.horas_extra, calc.horas_nocturnas, calc.valor_recargo, calc.valor_extra
       ]);
       backupInserted += resBackup.rowCount;
     }
-    
+
     if (backupInserted !== affectedIds.length) throw new Error('No se guardaron todos los backups.');
-    
+
     const countCheck = await client.query(`SELECT COUNT(*) as c FROM asistencias_reparacion_backup WHERE backup_run_id=?`, [runId]);
     if (parseInt(countCheck.rows[0].c, 10) !== affectedIds.length) {
       throw new Error('Discrepancia en el conteo real de asistencias_reparacion_backup en SQL.');
@@ -473,8 +486,8 @@ async function executeRepair(empresaId, year, month, config) {
     for (const d of plan.registros_a_cambiar.detalles_afectados) {
       const calc = d.calculated;
       const resUpdate = await client.query(`
-        UPDATE asistencias 
-        SET horas_recargo=?, horas_extra=?, horas_nocturnas=?, valor_recargo=?, valor_extra=? 
+        UPDATE asistencias
+        SET horas_recargo=?, horas_extra=?, horas_nocturnas=?, valor_recargo=?, valor_extra=?
         WHERE id=? AND empresa_id=?
       `, [calc.horas_recargo, calc.horas_extra, calc.horas_nocturnas, calc.valor_recargo, calc.valor_extra, d.originalRow.asistencia_id, empresaId]);
       updatedCount += resUpdate.rowCount;
@@ -483,7 +496,7 @@ async function executeRepair(empresaId, year, month, config) {
 
     // 13. Validación individual post-UPDATE
     const postUpdateRowsRes = await client.query(
-      `SELECT id, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra 
+      `SELECT id, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra
        FROM asistencias WHERE id = ANY(?::int[]) AND empresa_id=?`,
       [affectedIds, empresaId]
     );
@@ -509,7 +522,7 @@ async function executeRepair(empresaId, year, month, config) {
       const postHr = parseSafeNumeric(dbRow.horas_recargo, 'postHr');
       const postHe = parseSafeNumeric(dbRow.horas_extra, 'postHe');
       const postHn = parseSafeNumeric(dbRow.horas_nocturnas, 'postHn');
-      
+
       const postVr = parseSafeNumeric(dbRow.valor_recargo, 'postVr');
       const postVe = parseSafeNumeric(dbRow.valor_extra, 'postVe');
 
@@ -538,9 +551,9 @@ async function executeRepair(empresaId, year, month, config) {
     const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 
     const finalTotalsRes = await client.query(
-      `SELECT SUM(horas_recargo) as shr, SUM(horas_extra) as she, SUM(horas_nocturnas) as shn, 
+      `SELECT SUM(horas_recargo) as shr, SUM(horas_extra) as she, SUM(horas_nocturnas) as shn,
               SUM(valor_recargo) as svr, SUM(valor_extra) as sve
-       FROM asistencias 
+       FROM asistencias
        WHERE empresa_id=$1 AND fecha >= $2 AND fecha < $3 AND hora_entrada IS NOT NULL AND hora_salida IS NOT NULL`,
       [empresaId, startDate, endDate]
     );
@@ -549,7 +562,7 @@ async function executeRepair(empresaId, year, month, config) {
     const postHr = parseSafeNumeric(finalRow.shr, 'shr');
     const postHe = parseSafeNumeric(finalRow.she, 'she');
     const postHn = parseSafeNumeric(finalRow.shn, 'shn');
-    
+
     const postVr = parseSafeNumeric(finalRow.svr, 'svr');
     const postVe = parseSafeNumeric(finalRow.sve, 'sve');
     if (!Number.isInteger(postVr) || !Number.isInteger(postVe)) throw new Error('Post-Update dinero sum no es entero');
@@ -568,13 +581,13 @@ async function executeRepair(empresaId, year, month, config) {
 
     // 17. Marcar COMPLETADA
     const completeRes = await client.query(
-      `UPDATE reparaciones_log SET estado='COMPLETADA', completado_en=NOW() WHERE backup_run_id=? AND estado='PREPARADA'`, 
+      `UPDATE reparaciones_log SET estado='COMPLETADA', completado_en=NOW() WHERE backup_run_id=? AND estado='PREPARADA'`,
       [runId]
     );
     if (completeRes.rowCount !== 1) {
       throw new Error('Fallo al transicionar estado de PREPARADA a COMPLETADA');
     }
-    
+
     // 18. COMMIT
     await client.query('COMMIT');
     return { success: true, runId, updatedCount };
@@ -594,7 +607,7 @@ async function executeRestore(runId) {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    
+
     // 1. SIN FOR UPDATE consultar info de log para Lock determinista
     const logCheckRes = await client.query(`SELECT empresa_id, anio, mes, estado FROM reparaciones_log WHERE backup_run_id=?`, [runId]);
     if (logCheckRes.rowCount === 0) throw new Error('Reparación no encontrada.');
@@ -633,10 +646,50 @@ async function executeRestore(runId) {
       if (!lockedIds.has(parseInt(id, 10))) throw new Error(`Registro ${id} no bloqueado en restore.`);
     }
 
+    const preCheckRows = await client.query(
+      `SELECT id, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra
+       FROM asistencias WHERE id = ANY(?::int[]) AND empresa_id=?`,
+      [affectedIds, empresaId]
+    );
+
+    const preCheckMap = {};
+    for (const pr of preCheckRows.rows) {
+      preCheckMap[pr.id] = pr;
+    }
+
+    const tolerance = 0.01;
+    // Helper check function para comparar nullable values
+    const checkVal = (orig, curr, isMoney) => {
+      if (orig === null && curr !== null) throw new Error('Se esperaba NULL y se obtuvo valor');
+      if (orig !== null && curr === null) throw new Error('Se esperaba valor y se obtuvo NULL');
+      if (orig === null && curr === null) return;
+
+      const numOrig = finiteNumber(orig, 'orig');
+      const numCurr = finiteNumber(curr, 'curr');
+
+      if (isMoney) {
+        if (!Number.isInteger(numOrig) || !Number.isInteger(numCurr)) throw new Error('Monto no entero en restore check');
+        if (numOrig !== numCurr) throw new Error('Monto exacto no coincide en restore');
+      } else {
+        if (Math.abs(numOrig - numCurr) > tolerance) throw new Error('Horas no coinciden en restore');
+      }
+    };
+
+    for (const b of backups.rows) {
+      const pre = preCheckMap[b.asistencia_id];
+      if (!pre) throw new Error(`Restore verificación pre-update: No se encontró id ${b.asistencia_id}`);
+
+      checkVal(b.horas_recargo_reparada, pre.horas_recargo, false);
+      checkVal(b.horas_extra_reparada, pre.horas_extra, false);
+      checkVal(b.horas_nocturnas_reparada, pre.horas_nocturnas, false);
+      checkVal(b.valor_recargo_reparado, pre.valor_recargo, true);
+      checkVal(b.valor_extra_reparado, pre.valor_extra, true);
+    }
+
     let restoredCount = 0;
     for (const b of backups.rows) {
       const res = await client.query(`
-        UPDATE asistencias 
+        UPDATE asistencias
         SET horas_recargo=?, horas_extra=?, horas_nocturnas=?, valor_recargo=?, valor_extra=?
         WHERE id=? AND empresa_id=?
       `, [b.horas_recargo_original, b.horas_extra_original, b.horas_nocturnas_original, b.valor_recargo_original, b.valor_extra_original, b.asistencia_id, empresaId]);
@@ -647,7 +700,7 @@ async function executeRestore(runId) {
 
     // Validación post-restore para verificar escritura exacta (con NULL support)
     const recheckedRows = await client.query(
-      `SELECT id, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra 
+      `SELECT id, horas_recargo, horas_extra, horas_nocturnas, valor_recargo, valor_extra
        FROM asistencias WHERE id = ANY(?::int[]) AND empresa_id=?`,
       [affectedIds, empresaId]
     );
@@ -657,7 +710,7 @@ async function executeRestore(runId) {
       recheckedMap[rr.id] = rr;
     }
 
-    const tolerance = 0.01;
+
     for (const b of backups.rows) {
       const post = recheckedMap[b.asistencia_id];
       if (!post) throw new Error(`Restore verificación: No se encontró id ${b.asistencia_id}`);
@@ -667,7 +720,7 @@ async function executeRestore(runId) {
         if (orig === null && curr !== null) throw new Error('Se esperaba NULL y se obtuvo valor');
         if (orig !== null && curr === null) throw new Error('Se esperaba valor y se obtuvo NULL');
         if (orig === null && curr === null) return;
-        
+
         const numOrig = finiteNumber(orig, 'orig');
         const numCurr = finiteNumber(curr, 'curr');
 
@@ -687,15 +740,83 @@ async function executeRestore(runId) {
     }
 
     const restoreRes = await client.query(
-      `UPDATE reparaciones_log SET estado='RESTAURADA', restaurado_en=NOW() WHERE backup_run_id=? AND estado='COMPLETADA'`, 
+      `UPDATE reparaciones_log SET estado='RESTAURADA', restaurado_en=NOW() WHERE backup_run_id=? AND estado='COMPLETADA'`,
       [runId]
     );
     if (restoreRes.rowCount !== 1) {
       throw new Error('Fallo al transicionar estado de COMPLETADA a RESTAURADA');
     }
     await client.query('COMMIT');
-    
+
     return { success: true, restoredCount };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// -------------------------------------------------------------------
+// Upgrade Backup Implementation
+// -------------------------------------------------------------------
+async function executeUpgradeBackup() {
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+
+    const countLog = await client.query('SELECT COUNT(*) as c FROM reparaciones_log');
+    if (parseInt(countLog.rows[0].c, 10) !== 0) throw new Error('reparaciones_log no está vacía');
+
+    const countBackup = await client.query('SELECT COUNT(*) as c FROM asistencias_reparacion_backup');
+    if (parseInt(countBackup.rows[0].c, 10) !== 0) throw new Error('asistencias_reparacion_backup no está vacía');
+
+    await client.query(`
+      ALTER TABLE public.asistencias_reparacion_backup
+      ADD COLUMN IF NOT EXISTS horas_recargo_reparada DECIMAL(10,2),
+      ADD COLUMN IF NOT EXISTS horas_extra_reparada DECIMAL(10,2),
+      ADD COLUMN IF NOT EXISTS horas_nocturnas_reparada DECIMAL(10,2),
+      ADD COLUMN IF NOT EXISTS valor_recargo_reparado INTEGER,
+      ADD COLUMN IF NOT EXISTS valor_extra_reparado INTEGER
+    `);
+
+    const colsBackupRes = await client.query(`
+      SELECT column_name, data_type, numeric_precision, numeric_scale
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'asistencias_reparacion_backup'
+        AND column_name IN (
+          'horas_recargo_reparada',
+          'horas_extra_reparada',
+          'horas_nocturnas_reparada',
+          'valor_recargo_reparado',
+          'valor_extra_reparado'
+        )
+    `);
+
+    if (colsBackupRes.rowCount !== 5) {
+      throw new Error('No se encontraron exactamente las 5 columnas requeridas tras el ALTER.');
+    }
+
+    for (const row of colsBackupRes.rows) {
+      const col = row.column_name;
+      const type = row.data_type;
+
+      if (col.startsWith('horas_')) {
+        const prec = parseInt(row.numeric_precision, 10);
+        const scale = parseInt(row.numeric_scale, 10);
+        if (type !== 'numeric' || prec !== 10 || scale !== 2) {
+          throw new Error(`Columna ${col} no tiene el tipo DECIMAL(10,2) esperado`);
+        }
+      } else if (col.startsWith('valor_')) {
+        if (type !== 'integer') {
+          throw new Error(`Columna ${col} no tiene el tipo INTEGER esperado`);
+        }
+      }
+    }
+
+    await client.query('COMMIT');
+    return { success: true, message: 'Backup table upgraded successfully.' };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -727,12 +848,12 @@ exports.handler = async function (event, context) {
 
     const params = event.queryStringParameters || {};
     const action = params.action;
-    
+
     if (action === 'preview') {
       const empresaId = parseIntParam(params.empresa_id, 'empresa_id', 13, 13);
       const year = parseIntParam(params.year, 'year', 2026, 2026);
       const month = parseIntParam(params.month, 'month', 8, 9);
-      
+
       const companyRows = await safeQuery('SELECT id, nombre, hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo, requiere_gps, latitud, longitud FROM empresas WHERE id = ?', [empresaId]);
       if (!companyRows.length) return { statusCode: 404, body: JSON.stringify({ success: false, message: 'Empresa no encontrada' }) };
       const config = companyRows[0];
@@ -751,6 +872,14 @@ exports.handler = async function (event, context) {
       }
       const setupRes = await executeSetup();
       return { statusCode: 200, body: JSON.stringify(setupRes) };
+    }
+
+    if (action === 'upgrade-backup') {
+      if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: JSON.stringify({ success: false, message: 'Method Not Allowed' }) };
+      }
+      const upgradeRes = await executeUpgradeBackup();
+      return { statusCode: 200, body: JSON.stringify(upgradeRes) };
     }
 
     // STRICTLY ENFORCED: REPAIR AND RESTORE ARE BLOCKED
