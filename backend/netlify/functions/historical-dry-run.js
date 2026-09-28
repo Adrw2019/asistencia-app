@@ -104,6 +104,57 @@ exports.handler = async function (event, context) {
       return { statusCode: 200, body: JSON.stringify({ success: true, companies: rows }) };
     }
 
+    // Action: company-summary
+    if (action === 'company-summary') {
+      const empresasRows = await safeQuery('SELECT id AS empresa_id, nombre FROM empresas ORDER BY id', []);
+      
+      const empleadosCountRows = await safeQuery('SELECT empresa_id, COUNT(id) AS cantidad_empleados FROM empleados GROUP BY empresa_id', []);
+      const empleadosMap = {};
+      for (const r of empleadosCountRows) {
+        empleadosMap[r.empresa_id] = Number(r.cantidad_empleados);
+      }
+
+      const asistenciasCountRows = await safeQuery('SELECT empresa_id, COUNT(id) AS cantidad_asistencias, MIN(fecha) AS primera_asistencia, MAX(fecha) AS ultima_asistencia FROM asistencias GROUP BY empresa_id', []);
+      const asistenciasMap = {};
+      for (const r of asistenciasCountRows) {
+        asistenciasMap[r.empresa_id] = {
+          cantidad_asistencias: Number(r.cantidad_asistencias),
+          primera_asistencia: formatFechaSql(r.primera_asistencia),
+          ultima_asistencia: formatFechaSql(r.ultima_asistencia)
+        };
+      }
+
+      const detallesEmpleadosRows = await safeQuery(`
+        SELECT e.empresa_id, e.id AS empleado_id, e.nombre, COUNT(a.id) AS cantidad_asistencias
+        FROM empleados e
+        LEFT JOIN asistencias a ON e.id = a.empleado_id AND e.empresa_id = a.empresa_id
+        GROUP BY e.empresa_id, e.id, e.nombre
+        ORDER BY e.nombre
+      `, []);
+      
+      const detallesMap = {};
+      for (const r of detallesEmpleadosRows) {
+        if (!detallesMap[r.empresa_id]) detallesMap[r.empresa_id] = [];
+        detallesMap[r.empresa_id].push({
+          empleado_id: r.empleado_id,
+          nombre: r.nombre,
+          cantidad_asistencias: Number(r.cantidad_asistencias)
+        });
+      }
+
+      const summary = empresasRows.map(emp => ({
+        empresa_id: emp.empresa_id,
+        nombre: emp.nombre,
+        cantidad_empleados: empleadosMap[emp.empresa_id] || 0,
+        cantidad_asistencias: asistenciasMap[emp.empresa_id] ? asistenciasMap[emp.empresa_id].cantidad_asistencias : 0,
+        primera_asistencia: asistenciasMap[emp.empresa_id] ? asistenciasMap[emp.empresa_id].primera_asistencia : null,
+        ultima_asistencia: asistenciasMap[emp.empresa_id] ? asistenciasMap[emp.empresa_id].ultima_asistencia : null,
+        empleados: detallesMap[emp.empresa_id] || []
+      }));
+
+      return { statusCode: 200, body: JSON.stringify({ success: true, summary }) };
+    }
+
     // Action: dry-run
     if (action === 'dry-run') {
       const empresaId = params.empresa_id;
