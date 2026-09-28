@@ -14,6 +14,22 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+function normalizeQuery(text) {
+  let pgText = '';
+  let paramIndex = 1;
+
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '?') {
+      pgText += '$' + paramIndex;
+      paramIndex++;
+    } else {
+      pgText += text[i];
+    }
+  }
+
+  return pgText;
+}
+
 module.exports = {
   query: (text, params, callback) => {
     if (typeof params === 'function') {
@@ -21,17 +37,7 @@ module.exports = {
       params = [];
     }
 
-    // Reemplazar ? por $1, $2, etc. de forma segura (sin regex complejas)
-    let pgText = '';
-    let paramIndex = 1;
-    for (let i = 0; i < text.length; i++) {
-      if (text[i] === '?') {
-        pgText += '$' + paramIndex;
-        paramIndex++;
-      } else {
-        pgText += text[i];
-      }
-    }
+    const pgText = normalizeQuery(text);
 
     pool.query(pgText, params, (err, res) => {
       if (typeof callback !== 'function') {
@@ -40,15 +46,26 @@ module.exports = {
 
       if (err) return callback(err, null);
       
-      // Manejar el caso donde res es un array (múltiples sentencias) o undefined
       const rows = res ? (Array.isArray(res) ? res[res.length - 1].rows : res.rows) : [];
       
-      // Mockear insertId para compatibilidad (se requiere RETURNING id en el SQL)
       if (res && !Array.isArray(res) && res.command === 'INSERT' && rows && rows.length > 0 && rows[0].id) {
         rows.insertId = rows[0].id;
       }
       
       callback(null, rows);
     });
+  },
+
+  getClient: async () => {
+    const client = await pool.connect();
+
+    return {
+      query: (text, params = []) => {
+        const pgText = normalizeQuery(text);
+        return client.query(pgText, params);
+      },
+
+      release: () => client.release()
+    };
   }
 };
