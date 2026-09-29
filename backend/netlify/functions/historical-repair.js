@@ -383,6 +383,28 @@ async function executeRepair(empresaId, year, month, config) {
     const queryFn = (sql, p) => client.query(sql, p).then(res => res.rows);
     const plan = await buildRepairPlan(queryFn, empresaId, year, month, config);
 
+    // 4.5 FINGERPRINT DE SEGURIDAD
+    const sum = plan.resumen_final;
+    const count = plan.periodo_completo;
+    if (
+      count.total_registros !== 103 ||
+      count.registros_a_cambiar !== 96 ||
+      count.sin_cambios !== 7 ||
+      count.requiere_revision !== 0
+    ) {
+      throw new Error(`Fingerprint conteos fallido: ${JSON.stringify(count)}`);
+    }
+
+    if (
+      Math.round(Number(sum.horas_recargo) * 100) !== 13280 ||
+      Math.round(Number(sum.horas_extra) * 100) !== 3873 ||
+      Math.round(Number(sum.horas_nocturnas) * 100) !== 2418 ||
+      sum.valor_recargo !== 358644 ||
+      sum.valor_extra !== 542158
+    ) {
+      throw new Error(`Fingerprint totales fallido: ${JSON.stringify(sum)}`);
+    }
+
     // 5. Verificar requiere_revision
     if (plan.periodo_completo.requiere_revision > 0) throw new Error(`Existen ${plan.periodo_completo.requiere_revision} registros que requieren revisión (datos inválidos).`);
 
@@ -882,8 +904,25 @@ exports.handler = async function (event, context) {
       return { statusCode: 200, body: JSON.stringify(upgradeRes) };
     }
 
-    // STRICTLY ENFORCED: REPAIR AND RESTORE ARE BLOCKED
-    if (action === 'repair' || action === 'restore') {
+    if (action === 'repair') {
+      if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: JSON.stringify({ success: false, message: 'Method Not Allowed' }) };
+      }
+
+      const empresaId = 13;
+      const year = 2026;
+      const month = 8;
+
+      const companyRows = await safeQuery('SELECT id, nombre, hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo, requiere_gps, latitud, longitud FROM empresas WHERE id = ?', [empresaId]);
+      if (!companyRows.length) return { statusCode: 404, body: JSON.stringify({ success: false, message: 'Empresa no encontrada' }) };
+      const config = companyRows[0];
+
+      const repairRes = await executeRepair(empresaId, year, month, config);
+      return { statusCode: 200, body: JSON.stringify(repairRes) };
+    }
+
+    // STRICTLY ENFORCED: RESTORE IS BLOCKED
+    if (action === 'restore') {
       return { statusCode: 403, body: JSON.stringify({ success: false, message: 'Feature not enabled yet. Security preview only.' }) };
     }
 
