@@ -392,20 +392,20 @@ async function executeRepair(empresaId, year, month, config) {
     }
 
     if (
-      pc.total_registros !== 103 ||
-      pc.registros_a_cambiar !== 96 ||
-      pc.sin_cambios !== 7 ||
+      pc.total_registros !== 120 ||
+      pc.registros_a_cambiar !== 82 ||
+      pc.sin_cambios !== 38 ||
       pc.requiere_revision !== 0
     ) {
       throw new Error(`Fingerprint conteos fallido: ${JSON.stringify(pc)}`);
     }
 
     if (
-      Math.round(Number(td.horas_recargo) * 100) !== 13280 ||
-      Math.round(Number(td.horas_extra) * 100) !== 3873 ||
-      Math.round(Number(td.horas_nocturnas) * 100) !== 2418 ||
-      Number(td.valor_recargo) !== 358644 ||
-      Number(td.valor_extra) !== 542158
+      Math.round(Number(td.horas_recargo) * 100) !== 12621 ||
+      Math.round(Number(td.horas_extra) * 100) !== 3900 ||
+      Math.round(Number(td.horas_nocturnas) * 100) !== 2955 ||
+      Number(td.valor_recargo) !== 340805 ||
+      Number(td.valor_extra) !== 546000
     ) {
       throw new Error(`Fingerprint totales fallido: ${JSON.stringify(td)}`);
     }
@@ -916,7 +916,7 @@ exports.handler = async function (event, context) {
 
       const empresaId = 13;
       const year = 2026;
-      const month = 8;
+      const month = 9;
 
       const companyRows = await safeQuery('SELECT id, nombre, hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo, requiere_gps, latitud, longitud FROM empresas WHERE id = ?', [empresaId]);
       if (!companyRows.length) return { statusCode: 404, body: JSON.stringify({ success: false, message: 'Empresa no encontrada' }) };
