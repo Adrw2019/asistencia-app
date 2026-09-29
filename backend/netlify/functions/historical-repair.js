@@ -909,25 +909,8 @@ exports.handler = async function (event, context) {
       return { statusCode: 200, body: JSON.stringify(upgradeRes) };
     }
 
-    if (action === 'repair') {
-      if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: JSON.stringify({ success: false, message: 'Method Not Allowed' }) };
-      }
-
-      const empresaId = 13;
-      const year = 2026;
-      const month = 9;
-
-      const companyRows = await safeQuery('SELECT id, nombre, hora_entrada_esperada, hora_salida_esperada, valor_dia, paga_extras, descuenta_tarde, modo_calculo, requiere_gps, latitud, longitud FROM empresas WHERE id = ?', [empresaId]);
-      if (!companyRows.length) return { statusCode: 404, body: JSON.stringify({ success: false, message: 'Empresa no encontrada' }) };
-      const config = companyRows[0];
-
-      const repairRes = await executeRepair(empresaId, year, month, config);
-      return { statusCode: 200, body: JSON.stringify(repairRes) };
-    }
-
-    // STRICTLY ENFORCED: RESTORE IS BLOCKED
-    if (action === 'restore') {
+    // STRICTLY ENFORCED: REPAIR AND RESTORE ARE BLOCKED
+    if (action === 'repair' || action === 'restore') {
       return { statusCode: 403, body: JSON.stringify({ success: false, message: 'Feature not enabled yet. Security preview only.' }) };
     }
 
