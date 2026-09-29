@@ -384,25 +384,30 @@ async function executeRepair(empresaId, year, month, config) {
     const plan = await buildRepairPlan(queryFn, empresaId, year, month, config);
 
     // 4.5 FINGERPRINT DE SEGURIDAD
-    const sum = plan.resumen_final;
-    const count = plan.periodo_completo;
-    if (
-      count.total_registros !== 103 ||
-      count.registros_a_cambiar !== 96 ||
-      count.sin_cambios !== 7 ||
-      count.requiere_revision !== 0
-    ) {
-      throw new Error(`Fingerprint conteos fallido: ${JSON.stringify(count)}`);
+    const pc = plan.periodo_completo;
+    const td = pc.totales_despues;
+
+    if (!td) {
+      throw new Error('Fingerprint agosto: totales_despues no disponible');
     }
 
     if (
-      Math.round(Number(sum.horas_recargo) * 100) !== 13280 ||
-      Math.round(Number(sum.horas_extra) * 100) !== 3873 ||
-      Math.round(Number(sum.horas_nocturnas) * 100) !== 2418 ||
-      sum.valor_recargo !== 358644 ||
-      sum.valor_extra !== 542158
+      pc.total_registros !== 103 ||
+      pc.registros_a_cambiar !== 96 ||
+      pc.sin_cambios !== 7 ||
+      pc.requiere_revision !== 0
     ) {
-      throw new Error(`Fingerprint totales fallido: ${JSON.stringify(sum)}`);
+      throw new Error(`Fingerprint conteos fallido: ${JSON.stringify(pc)}`);
+    }
+
+    if (
+      Math.round(Number(td.horas_recargo) * 100) !== 13280 ||
+      Math.round(Number(td.horas_extra) * 100) !== 3873 ||
+      Math.round(Number(td.horas_nocturnas) * 100) !== 2418 ||
+      Number(td.valor_recargo) !== 358644 ||
+      Number(td.valor_extra) !== 542158
+    ) {
+      throw new Error(`Fingerprint totales fallido: ${JSON.stringify(td)}`);
     }
 
     // 5. Verificar requiere_revision
