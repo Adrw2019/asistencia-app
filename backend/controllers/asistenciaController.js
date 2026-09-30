@@ -347,7 +347,18 @@ exports.resumen = (req, res) => {
   sql += ' GROUP BY e.id,e.cedula,e.nombre ORDER BY e.nombre';
   db.query(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
-    res.json({ success: true, data: rows });
+    const data = rows.map(r => {
+      const horasTotales = Number(r.horas || 0);
+      const horasRecargo = Number(r.recargos || 0);
+      const horasExtra = Number(r.extras || 0);
+      const horasNocturnas = Number(r.nocturnas || 0);
+      const ordinarias = Math.max(0, horasTotales - horasRecargo - horasExtra - horasNocturnas);
+      return {
+        ...r,
+        horas_ordinarias: Number(ordinarias.toFixed(2))
+      };
+    });
+    res.json({ success: true, data });
   });
 };
 

@@ -186,6 +186,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                 final double horasNocturnas = double.tryParse(
                                         item['nocturnas']?.toString() ?? '0') ??
                                     0;
+                                final double fallbackOrdinarias = (horasT -
+                                        horasRecargo -
+                                        horasExtra -
+                                        horasNocturnas)
+                                    .clamp(0.0, double.infinity);
+                                final double horasOrdinarias =
+                                    item['horas_ordinarias'] != null
+                                        ? (double.tryParse(
+                                                item['horas_ordinarias']
+                                                    .toString()) ??
+                                            fallbackOrdinarias)
+                                        : fallbackOrdinarias;
                                 final int totalDinero = int.tryParse(
                                         item['total']?.toString() ?? '0') ??
                                     0;
@@ -234,11 +246,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const Text('Horas trabajadas:',
+                                            const Text('Horas ordinarias:',
                                                 style: TextStyle(
                                                     color: Colors.white70)),
                                             Text(
-                                                '${horasT.toStringAsFixed(2)} h',
+                                                '${horasOrdinarias.toStringAsFixed(2)} h',
                                                 style: const TextStyle(
                                                     color: Colors.white,
                                                     fontWeight:
@@ -321,6 +333,23 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                                     color: Colors.white70)),
                                             Text(
                                                 '${horasNocturnas.toStringAsFixed(2)} h',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'Total horas trabajadas:',
+                                                style: TextStyle(
+                                                    color: Colors.white70)),
+                                            Text(
+                                                '${horasT.toStringAsFixed(2)} h',
                                                 style: const TextStyle(
                                                     color: Colors.white,
                                                     fontWeight:
